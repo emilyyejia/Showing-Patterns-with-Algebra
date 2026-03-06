@@ -4,6 +4,8 @@ import { HTML5Backend } from 'react-dnd-html5-backend';
 import type { LevelComponentProps } from '../types';
 import InstructionButton from '../components/InstructionButton';
 import InstructionModal from '../components/InstructionModal';
+import GlossaryButton from '../components/GlossaryButton';
+import GlossaryModal from '../components/GlossaryModal';
 
 type RulePart = string;
 
@@ -25,7 +27,7 @@ const CHALLENGES: Challenge[] = [
     correctSequence: '4, 7, 10',
     correctRule: ['start at 4', 'add 3', 'each figure'],
     allTiles: ['start at 4', 'add 3', 'each figure', 'double', 'subtract 2'],
-    instruction: 'Figures: The square blocks grow by the same amount each time.',
+    instruction: 'Look at the figures. What are the first three values?',
   },
   {
     id: 2,
@@ -34,7 +36,7 @@ const CHALLENGES: Challenge[] = [
     correctSequence: '-10, -5, 0',
     correctRule: ['start at -10', 'add 5', 'each step'],
     allTiles: ['start at -10', 'add 5', 'each step', 'double', 'subtract 3'],
-    instruction: 'NUMBER LINE: points showing growth from a negative value.',
+    instruction: 'Look at the number line. What are the first three values?',
   },
   {
     id: 3,
@@ -43,7 +45,7 @@ const CHALLENGES: Challenge[] = [
     correctSequence: '10, 8, 6',
     correctRule: ['start at 10', 'subtract 2', 'each term'],
     allTiles: ['start at 10', 'subtract 2', 'each term', 'half', 'add 2'],
-    instruction: 'TABLE: a shrinking pattern described in a data chart.',
+    instruction: 'Look at the table. What are the first three values?',
   },
 ];
 
@@ -53,6 +55,7 @@ const PatternLevel2: React.FC<LevelComponentProps> = ({ onComplete, onExit, part
   const [isSeqValid, setIsSeqValid] = useState(false);
   const [selectedTiles, setSelectedTiles] = useState<RulePart[]>([]);
   const [isInstructionOpen, setIsInstructionOpen] = useState(false);
+  const [isGlossaryOpen, setIsGlossaryOpen] = useState(false);
   const [feedback, setFeedback] = useState<{ type: 'correct' | 'incorrect'; message?: string } | null>(null);
   const [isAllComplete, setIsAllComplete] = useState(false);
   const [validationStatus, setValidationStatus] = useState<Record<string, 'correct' | 'incorrect' | null>>({});
@@ -88,11 +91,11 @@ const PatternLevel2: React.FC<LevelComponentProps> = ({ onComplete, onExit, part
     if (cleanedInput === cleanedCorrect) {
         setIsSeqValid(true);
         setValidationStatus(prev => ({ ...prev, seqInput: 'correct' }));
-        setFeedback({ type: 'correct', message: "Great! Now build the rule." });
+        setFeedback({ type: 'correct', message: "Excellent! Now build the rule." });
         setTimeout(() => setFeedback(null), 1500);
     } else {
         setValidationStatus(prev => ({ ...prev, seqInput: 'incorrect' }));
-        setFeedback({ type: 'incorrect', message: "The numeric sequence doesn't match." });
+        setFeedback({ type: 'incorrect', message: "Try again!" });
     }
   };
 
@@ -109,7 +112,9 @@ const PatternLevel2: React.FC<LevelComponentProps> = ({ onComplete, onExit, part
     setValidationStatus(prev => ({ ...prev, ...status }));
 
     if (isRuleCorrect) {
-      setFeedback({ type: 'correct' });
+      const messages = ["Great job!", "Excellent work!", "Perfect!", "Amazing!"];
+      const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+      setFeedback({ type: 'correct', message: randomMessage });
       setTimeout(() => {
         setFeedback(null);
         setValidationStatus({});
@@ -123,7 +128,7 @@ const PatternLevel2: React.FC<LevelComponentProps> = ({ onComplete, onExit, part
         }
       }, 1500);
     } else {
-      setFeedback({ type: 'incorrect', message: "The rule tiles are not quite right." });
+      setFeedback({ type: 'incorrect', message: "Try again! Examine the pattern carefully." });
     }
   };
 
@@ -201,6 +206,8 @@ const PatternLevel2: React.FC<LevelComponentProps> = ({ onComplete, onExit, part
 
   return (
     <div className="flex flex-col items-center justify-center min-h-full p-6 text-white bg-gray-900 font-sans max-w-6xl mx-auto">
+      <GlossaryButton onClick={() => setIsGlossaryOpen(true)} />
+      <GlossaryModal isOpen={isGlossaryOpen} onClose={() => setIsGlossaryOpen(false)} />
       <InstructionModal
         isOpen={isInstructionOpen}
         onClose={() => setIsInstructionOpen(false)}
@@ -213,8 +220,6 @@ const PatternLevel2: React.FC<LevelComponentProps> = ({ onComplete, onExit, part
         </ul>
       </InstructionModal>
 
-      <h1 className="text-3xl font-bold mb-4 text-sky-300 uppercase italic">Pattern Builder</h1>
-      
       <div className="flex gap-4 mb-8">
         {CHALLENGES.map((_, i) => (
           <button 
@@ -226,20 +231,12 @@ const PatternLevel2: React.FC<LevelComponentProps> = ({ onComplete, onExit, part
         ))}
       </div>
 
-      {feedback && (
-        <div className={`fixed top-24 px-8 py-4 rounded-2xl font-bold shadow-2xl z-[200] animate-fade-in ${
-          feedback.type === 'correct' ? 'bg-emerald-500' : 'bg-rose-600 border-2 border-rose-400'
-        }`}>
-          {feedback.message || (feedback.type === 'correct' ? '✨ Perfect!' : 'Try again!')}
-        </div>
-      )}
-
       <div className={`w-full transition-all duration-700 ease-in-out ${isSeqValid ? 'grid grid-cols-1 lg:grid-cols-2 gap-8' : 'flex justify-center'}`}>
         <div className={`bg-gray-800 rounded-3xl p-8 shadow-2xl border border-gray-700 flex flex-col h-full transition-all duration-700 ease-in-out ${isSeqValid ? 'w-full' : 'w-full max-w-xl'}`}>
-          <p className="text-gray-300 mb-6 text-sm italic">{currentChallenge.instruction}</p>
+          <p className="text-white mb-6 text-2xl font-bold leading-relaxed">{currentChallenge.instruction}</p>
           {renderVisual()}
           <div className="mt-auto pt-8">
-            <label className="block text-sm font-bold text-gray-400 mb-3 uppercase tracking-tighter">Type the first three values:</label>
+            <label className="block text-sm font-bold text-gray-400 mb-3">Type the first three values:</label>
             <div className="flex gap-3">
                 <input 
                   type="text"
@@ -251,14 +248,23 @@ const PatternLevel2: React.FC<LevelComponentProps> = ({ onComplete, onExit, part
                 />
                 {!isSeqValid && <button onClick={checkSeq} className="bg-sky-600 px-6 rounded-xl font-black transition-all hover:bg-sky-500 active:scale-95">Check</button>}
             </div>
+            {feedback && feedback.type === 'correct' && !isSeqValid && (
+              <div className="mt-3 text-emerald-400 font-semibold animate-fade-in">
+                {feedback.message}
+              </div>
+            )}
+            {feedback && feedback.type === 'incorrect' && !isSeqValid && (
+              <div className="mt-3 text-yellow-400 font-semibold animate-fade-in">
+                {feedback.message}
+              </div>
+            )}
           </div>
         </div>
 
         {isSeqValid && (
           <div className="bg-gray-800 rounded-3xl p-8 shadow-2xl border border-gray-700 flex flex-col h-full animate-fade-in">
-            <h2 className="text-xl font-bold mb-6 text-gray-400 uppercase tracking-widest flex items-center gap-2">🛠️ Build the Rule</h2>
+            {selectedTiles.length === 0 && <p className="text-gray-400 font-medium mb-4">Click 3 tiles below to build the rule.</p>}
             <div className="flex gap-4 mb-10 min-h-[80px] p-4 bg-gray-900/50 rounded-2xl border border-dashed border-gray-600 justify-center items-center">
-               {selectedTiles.length === 0 && <span className="text-gray-600 font-medium italic">Click 3 tiles below to build the rule.</span>}
                {selectedTiles.map((tile, i) => {
                  const status = validationStatus[tile];
                  const bgColor = status === 'correct' ? 'bg-emerald-600' : status === 'incorrect' ? 'bg-rose-600' : 'bg-sky-600';
@@ -286,12 +292,22 @@ const PatternLevel2: React.FC<LevelComponentProps> = ({ onComplete, onExit, part
               })}
             </div>
             <div className="mt-auto pt-10">
+              {feedback && feedback.type === 'correct' && isSeqValid && (
+                <div className="mb-4 text-emerald-400 font-semibold animate-fade-in">
+                  {feedback.message}
+                </div>
+              )}
+              {feedback && feedback.type === 'incorrect' && isSeqValid && (
+                <div className="mb-4 text-yellow-400 font-semibold animate-fade-in">
+                  {feedback.message}
+                </div>
+              )}
               <button 
                 onClick={handleCheck}
                 disabled={selectedTiles.length < 3}
                 className="w-full bg-sky-600 hover:bg-sky-500 disabled:bg-gray-600 px-8 py-5 rounded-2xl font-black text-xl shadow-lg active:scale-95 flex items-center justify-center gap-4"
               >
-                Check Answers ➡️
+                Check
               </button>
             </div>
           </div>

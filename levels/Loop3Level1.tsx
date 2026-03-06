@@ -4,6 +4,8 @@ import { HTML5Backend } from 'react-dnd-html5-backend';
 import type { LevelComponentProps } from '../types';
 import InstructionModal from '../components/InstructionModal';
 import InstructionButton from '../components/InstructionButton';
+import GlossaryButton from '../components/GlossaryButton';
+import GlossaryModal from '../components/GlossaryModal';
 
 interface VocabItem { id: string; label: string; }
 
@@ -65,18 +67,18 @@ const DropSlot: React.FC<{ slotId: string; text: string; placedId: string | null
 
 const DraggableItem3: React.FC<{ id: string; label: string; isPlaced: boolean; color: string }> = ({ id, label, isPlaced, color }) => {
   const [{ isDragging }, drag] = useDrag(() => ({ type: 'vocab-match', item: { id }, collect: (monitor) => ({ isDragging: !!monitor.isDragging() }) }), [id]);
-  return <div ref={drag} className={`px-4 py-2 rounded-xl border-2 font-bold text-sm cursor-grab active:cursor-grabbing transition-all ${isPlaced ? 'opacity-20 pointer-events-none' : 'opacity-100 bg-gray-700 border-gray-600 hover:border-sky-500 shadow-lg'} ${isDragging ? 'scale-105 rotate-2' : ''} ${color}`}>{label}</div>;
+  return <div ref={drag} className={`px-6 py-3 rounded-xl border-2 font-bold text-lg cursor-grab active:cursor-grabbing transition-all ${isPlaced ? 'opacity-20 pointer-events-none' : 'opacity-100 bg-gray-700 border-gray-600 hover:border-sky-500 shadow-lg'} ${isDragging ? 'scale-105 rotate-2' : ''} ${color}`}>{label}</div>;
 };
 
 const DropTarget3: React.FC<{ index: number; description: string; placedId: string | null; onDrop: (id: string) => void; status?: 'correct' | 'incorrect'; onRemove: () => void }> = ({ index, description, placedId, onDrop, status, onRemove }) => {
   const [{ isOver }, drop] = useDrop(() => ({ accept: 'vocab-match', drop: (item: { id: string }) => onDrop(item.id), collect: (monitor) => ({ isOver: !!monitor.isOver() }) }), [onDrop]);
   const placedItem = STAGE3_MATCHES.find(m => m.id === placedId);
   return (
-    <div ref={drop} className={`p-4 rounded-2xl border-2 border-dashed transition-all flex flex-col md:flex-row items-center gap-4 ${isOver ? 'bg-sky-500/10 border-sky-400' : 'bg-gray-900/40 border-gray-700'} ${status === 'correct' ? 'border-emerald-500 bg-emerald-900/10' : status === 'incorrect' ? 'border-rose-500 bg-rose-900/10' : ''}`}>
-      <div className="flex-grow text-sm font-medium text-gray-300 italic">{description}</div>
+    <div ref={drop} className={`p-6 rounded-2xl border-2 border-dashed transition-all flex flex-col md:flex-row items-center gap-6 ${isOver ? 'bg-sky-500/10 border-sky-400' : 'bg-gray-900/40 border-gray-700'} ${status === 'correct' ? 'border-emerald-500 bg-emerald-900/10' : status === 'incorrect' ? 'border-rose-500 bg-rose-900/10' : ''}`}>
+      <div className="flex-grow text-base font-medium text-gray-300 italic">{description}</div>
       <div 
         onClick={onRemove} 
-        className={`w-40 h-10 rounded-lg flex items-center justify-center font-bold text-xs uppercase tracking-widest border border-gray-600 bg-gray-800/50 cursor-pointer transition-all hover:border-rose-400 group ${placedId ? 'border-sky-500 bg-sky-900/20 shadow-inner' : ''}`}
+        className={`w-48 h-12 rounded-lg flex items-center justify-center font-bold text-sm uppercase tracking-widest border border-gray-600 bg-gray-800/50 cursor-pointer transition-all hover:border-rose-400 group ${placedId ? 'border-sky-500 bg-sky-900/20 shadow-inner' : ''}`}
       >
         {placedId ? (
           <div className="relative w-full h-full flex items-center justify-center">
@@ -92,6 +94,7 @@ const DropTarget3: React.FC<{ index: number; description: string; placedId: stri
 const Loop3Level1Inner: React.FC<LevelComponentProps> = ({ onComplete, onExit, partialProgress, onSavePartialProgress }) => {
   const [stage, setStage] = useState(() => partialProgress?.stage || 1);
   const [isInstructionOpen, setIsInstructionOpen] = useState(false);
+  const [isGlossaryOpen, setIsGlossaryOpen] = useState(false);
   const [feedback, setFeedback] = useState<{ type: 'correct' | 'incorrect'; message?: string } | null>(null);
 
   const [runnerPos, setRunnerPos] = useState(1);
@@ -156,7 +159,7 @@ const Loop3Level1Inner: React.FC<LevelComponentProps> = ({ onComplete, onExit, p
     if (allCorrect) {
       handleCorrect(2);
     } else {
-      handleIncorrect("Some parts are misplaced. Click red boxes to remove them and try again.");
+      handleIncorrect("Try again! Use the information from the table.");
     }
   };
 
@@ -173,7 +176,7 @@ const Loop3Level1Inner: React.FC<LevelComponentProps> = ({ onComplete, onExit, p
     if (isQ1Correct && isQ2Correct) {
       handleCorrect(3);
     } else {
-      handleIncorrect("Think carefully! The 'Term Number' represents the step we are at (1st, 2nd, ...), and the distance is growing by a fixed amount.");
+      handleIncorrect("Think carefully!");
     }
   };
 
@@ -196,7 +199,7 @@ const Loop3Level1Inner: React.FC<LevelComponentProps> = ({ onComplete, onExit, p
     if (allCorrect) { 
       handleCorrect(); 
     } else {
-      handleIncorrect("Match error! Click the incorrect matches to remove them.");
+      handleIncorrect("Try again!");
     }
   };
 
@@ -249,14 +252,14 @@ const Loop3Level1Inner: React.FC<LevelComponentProps> = ({ onComplete, onExit, p
 
   return (
     <div className="flex flex-col items-center min-h-full p-6 text-white font-sans max-w-6xl mx-auto relative select-none">
+      <GlossaryButton onClick={() => setIsGlossaryOpen(true)} />
+      <GlossaryModal isOpen={isGlossaryOpen} onClose={() => setIsGlossaryOpen(false)} />
       <InstructionModal isOpen={isInstructionOpen} onClose={() => setIsInstructionOpen(false)} title="Variables and Constants">
         <p>A <strong>Variable</strong> is something that changes, like the term number.</p>
         <p className="mt-2">A <strong>Constant</strong> is something that stays the same, like the starting value or the common difference.</p>
       </InstructionModal>
 
       <InstructionButton onClick={() => setIsInstructionOpen(true)} />
-
-      <h1 className="text-3xl font-black mb-8 text-sky-400 italic uppercase">Analyzing Patterns</h1>
 
       <div className="flex gap-4 mb-10">
         {[1, 2, 3].map(i => (
@@ -270,24 +273,34 @@ const Loop3Level1Inner: React.FC<LevelComponentProps> = ({ onComplete, onExit, p
       </div>
 
       {/* Stage Instructions - Outside the main box */}
-      {stage === 1 && (
-        <p className="text-center text-white mb-6 text-xl font-medium animate-fade-in">
-          Race track vocabulary: Drag the blue boxes to match the pattern components.
+      {stage === 1 && runnerPos === 1 && (
+        <p className="text-center text-white mb-6 text-2xl font-bold leading-relaxed animate-fade-in">
+          Click "Run Further" and watch how the distance in the table increases for each new flag.
+        </p>
+      )}
+      {stage === 1 && runnerPos > 1 && runnerPos < 6 && (
+        <p className="text-center text-white mb-6 text-2xl font-bold leading-relaxed animate-fade-in">
+          Continue clicking "Run Further" to reach all flags and see the complete pattern.
+        </p>
+      )}
+      {stage === 1 && runnerPos === 6 && (
+        <p className="text-center text-white mb-6 text-2xl font-bold leading-relaxed animate-fade-in">
+          Use the information from the image and table on the left. Match each vocabulary term to the correct description by dragging and dropping.
         </p>
       )}
       {stage === 2 && (
-        <p className="text-center text-white mb-6 text-xl font-medium animate-fade-in">
-          Analysis: Variables vs Constants
+        <p className="text-center text-white mb-6 text-2xl font-bold leading-relaxed animate-fade-in">
+          Examine the number sequence and the table of values. Then, answer the questions.
         </p>
       )}
       {stage === 3 && (
-        <p className="text-center text-white mb-6 text-xl font-medium animate-fade-in">
-          Algebra Mastery: Match definitions to the correct terms.
+        <p className="text-center text-white mb-6 text-2xl font-bold leading-relaxed animate-fade-in">
+          Drag and drop to match each term with its definition.
         </p>
       )}
       
       {feedback && (
-        <div className={`fixed top-24 px-8 py-3 rounded-2xl font-bold shadow-2xl z-[200] animate-fade-in ${feedback.type === 'correct' ? 'bg-emerald-500' : 'bg-rose-600 border-2 border-rose-400'}`}>
+        <div className={`fixed top-24 px-8 py-3 rounded-2xl font-semibold shadow-2xl z-[200] animate-fade-in ${feedback.type === 'correct' ? 'text-emerald-400' : 'text-yellow-400'}`}>
           {feedback.message || '✨ Correct!'}
         </div>
       )}
@@ -295,7 +308,7 @@ const Loop3Level1Inner: React.FC<LevelComponentProps> = ({ onComplete, onExit, p
       <div className="w-full max-w-5xl bg-gray-800 rounded-3xl p-8 shadow-2xl border border-gray-700 relative mb-10">
         {stage === 1 && (
           <div className="w-full flex flex-col gap-8 animate-fade-in">
-            <div className="grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-8">
+            <div className={`grid grid-cols-1 gap-8 ${runnerPos === 6 ? 'lg:grid-cols-[1fr_350px]' : ''}`}>
               <div className="bg-gray-900/50 rounded-3xl p-6 border border-gray-700 shadow-xl flex flex-col gap-6">
                 <div className="relative h-32 bg-gray-900 rounded-2xl border-y-4 border-gray-700 overflow-hidden flex items-center">
                   {[1,2,3,4,5,6].map(f => (
@@ -324,7 +337,8 @@ const Loop3Level1Inner: React.FC<LevelComponentProps> = ({ onComplete, onExit, p
                   <table className="w-full border-collapse bg-gray-900 rounded-lg overflow-hidden border border-gray-700"><thead className="bg-gray-700"><tr><th className="p-2 border border-gray-600 text-sky-200 text-sm">Flag (n)</th><th className="p-2 border border-gray-600 text-sky-200 text-sm">Distance (km)</th></tr></thead><tbody className="font-mono text-sm">{[1,2,3,4,5,6].map(n => <tr key={n} className={n <= runnerPos ? 'opacity-100' : 'opacity-20'}><td className="p-2 border border-gray-600 text-center">{n}</td><td className="p-2 border border-gray-600 text-center text-indigo-300">{(n-1)*5}</td></tr>)}</tbody></table>
                 </div>
               </div>
-              <div className="bg-gray-900/50 rounded-3xl p-6 border border-gray-700 shadow-xl flex flex-col gap-4">
+              {runnerPos === 6 && (
+              <div className="bg-gray-900/50 rounded-3xl p-6 border border-gray-700 shadow-xl flex flex-col gap-4 animate-fade-in">
                 <h3 className="text-center font-bold text-gray-500 uppercase tracking-widest mb-2 border-b border-gray-700 pb-2">Vocabulary</h3>
                 <div className="flex flex-col gap-3">
                   {STAGE1_SLOTS.map((slot, i) => (
@@ -353,11 +367,13 @@ const Loop3Level1Inner: React.FC<LevelComponentProps> = ({ onComplete, onExit, p
                   ))}
                 </div>
               </div>
+              )}
             </div>
-            <div className="flex gap-4">
-              <button onClick={resetStage1} className="flex-1 bg-gray-700 hover:bg-gray-600 py-4 rounded-xl font-bold uppercase tracking-widest transition-colors">Clear All</button>
-              <button onClick={checkStage1} className="flex-[3] bg-sky-600 hover:bg-sky-500 py-4 rounded-xl font-black text-xl shadow-lg uppercase tracking-tighter transition-transform hover:scale-[1.02]">Check Answers</button>
+            {runnerPos === 6 && (
+            <div className="flex gap-4 animate-fade-in">
+              <button onClick={checkStage1} className="w-full bg-sky-600 hover:bg-sky-500 py-4 rounded-xl font-black text-xl shadow-lg uppercase tracking-tighter transition-transform hover:scale-[1.02]">Check</button>
             </div>
+            )}
           </div>
         )}
 
@@ -373,8 +389,7 @@ const Loop3Level1Inner: React.FC<LevelComponentProps> = ({ onComplete, onExit, p
               </div>
               <div className="space-y-8">
                 <div className={`bg-gray-900/50 p-6 rounded-2xl border-2 transition-all shadow-lg ${validationStatus.q1 === 'correct' ? 'border-emerald-500 bg-emerald-500/5' : validationStatus.q1 === 'incorrect' ? 'border-rose-500 bg-rose-500/5' : 'border-gray-700'}`}>
-                  <p className="text-gray-400 mb-4 font-bold text-sm italic">"Variables represent which position in the pattern you are finding."</p>
-                  <p className="mb-4 font-bold text-lg">1. What is the variable in this pattern?</p>
+                  <p className="mb-4 font-bold text-lg">Q1. A variable tells you which position in the pattern you are looking for. What is the variable in this pattern?</p>
                   <div className="grid grid-cols-1 gap-2">
                     {randomizedTerms.map(opt => (
                       <button 
@@ -387,9 +402,9 @@ const Loop3Level1Inner: React.FC<LevelComponentProps> = ({ onComplete, onExit, p
                     ))}
                   </div>
                 </div>
-                <div className="bg-gray-900/50 p-6 rounded-2xl border-2 transition-all shadow-lg">
-                  <p className="text-gray-400 mb-4 font-bold text-sm italic">"Constant difference is how much a sequence changes by each time."</p>
-                  <p className="mb-4 font-bold text-lg">2. What is the constant difference?</p>
+                {validationStatus.q1 === 'correct' && (
+                <div className="bg-gray-900/50 p-6 rounded-2xl border-2 transition-all shadow-lg animate-fade-in">
+                  <p className="mb-4 font-bold text-lg">Q2. Constant difference shows the change between each term. What is the constant difference in this pattern?</p>
                   <div className="grid grid-cols-1 gap-2">
                     {randomizedDiffs.map(opt => (
                       <button 
@@ -402,25 +417,24 @@ const Loop3Level1Inner: React.FC<LevelComponentProps> = ({ onComplete, onExit, p
                     ))}
                   </div>
                 </div>
+                )}
               </div>
             </div>
             <div className="flex gap-4 w-full">
-              <button onClick={() => { setQ1(null); setQ2(null); setFeedback(null); }} className="flex-1 bg-gray-700 hover:bg-gray-600 py-4 rounded-2xl font-bold uppercase tracking-widest transition-colors">Reset</button>
-              <button onClick={validateStage2} className="flex-[3] bg-sky-600 hover:bg-sky-500 py-4 rounded-2xl font-black text-xl shadow-lg active:scale-95 transition-transform uppercase">Verify Answers</button>
+              <button onClick={validateStage2} className="w-full bg-sky-600 hover:bg-sky-500 py-4 rounded-2xl font-black text-xl shadow-lg active:scale-95 transition-transform uppercase">Check</button>
             </div>
           </div>
         )}
 
         {stage === 3 && (
           <div className="w-full flex flex-col items-center animate-fade-in">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-10 w-full mb-10">
-              <div className="bg-gray-900/60 p-6 rounded-3xl border-2 border-dashed border-gray-700 flex flex-wrap gap-3 items-center justify-center h-fit shadow-inner">
-                <span className="w-full text-center text-[10px] text-gray-500 uppercase font-black tracking-widest mb-2">Available Labels</span>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-12 w-full mb-12">
+              <div className="bg-gray-900/60 p-8 rounded-3xl border-2 border-dashed border-gray-700 flex flex-wrap gap-4 items-center justify-center h-fit shadow-inner">
                 {randomizedStage3Matches.map(item => (
                   <DraggableItem3 key={item.id} id={item.id} label={item.vocab} isPlaced={Object.values(placedStage3).includes(item.id)} color={item.color} />
                 ))}
               </div>
-              <div className="space-y-4">
+              <div className="space-y-6">
                 {STAGE3_MATCHES.map((item, idx) => (
                   <DropTarget3 
                     key={idx} 
@@ -442,8 +456,7 @@ const Loop3Level1Inner: React.FC<LevelComponentProps> = ({ onComplete, onExit, p
               </div>
             </div>
             <div className="flex gap-4 w-full">
-              <button onClick={resetStage3} className="flex-1 bg-gray-700 hover:bg-gray-600 py-4 rounded-2xl font-bold uppercase tracking-widest transition-colors">Clear Matches</button>
-              <button onClick={checkStage3} className="flex-[3] bg-sky-600 hover:bg-sky-500 py-4 rounded-2xl font-black text-xl shadow-lg uppercase transition-transform hover:scale-[1.01]">Final Check</button>
+              <button onClick={checkStage3} className="w-full bg-sky-600 hover:bg-sky-500 py-5 rounded-2xl font-black text-xl shadow-lg uppercase transition-transform hover:scale-[1.01]">Check</button>
             </div>
           </div>
         )}

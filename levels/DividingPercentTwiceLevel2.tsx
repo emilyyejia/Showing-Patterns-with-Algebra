@@ -3,10 +3,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import type { LevelComponentProps } from '../types';
 import InstructionButton from '../components/InstructionButton';
 import InstructionModal from '../components/InstructionModal';
+import GlossaryButton from '../components/GlossaryButton';
+import GlossaryModal from '../components/GlossaryModal';
 
 const DividingPercentTwiceLevel2: React.FC<LevelComponentProps> = ({ onComplete, onExit, partialProgress, onSavePartialProgress }) => {
   const [taskIndex, setTaskIndex] = useState(() => partialProgress?.taskIndex || 0);
   const [isInstructionOpen, setIsInstructionOpen] = useState(false);
+  const [isGlossaryOpen, setIsGlossaryOpen] = useState(false);
   const totalTasks = 4; // Placeholder count
   const isCompletedRef = useRef(false);
 
@@ -30,6 +33,8 @@ const DividingPercentTwiceLevel2: React.FC<LevelComponentProps> = ({ onComplete,
 
   return (
     <div className="flex flex-col items-center justify-center h-full p-4 text-white relative font-sans">
+      <GlossaryButton onClick={() => setIsGlossaryOpen(true)} />
+      <GlossaryModal isOpen={isGlossaryOpen} onClose={() => setIsGlossaryOpen(false)} />
       {/* Instruction UI */}
       <InstructionButton onClick={() => setIsInstructionOpen(true)} />
       <InstructionModal

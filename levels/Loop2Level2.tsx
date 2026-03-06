@@ -3,6 +3,8 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import type { LevelComponentProps } from '../types';
+import GlossaryButton from '../components/GlossaryButton';
+import GlossaryModal from '../components/GlossaryModal';
 
 type CardType = 'sequence' | 'table' | 'graph' | 'words';
 type PatternID = 'A' | 'B';
@@ -58,8 +60,8 @@ interface Stage {
 
 const STAGES: Stage[] = [
   {
-    hintA: "Multiplying pattern (x2)",
-    hintB: "Adding pattern (+3)",
+    hintA: "multiply by 2 each time",
+    hintB: "add 3 each time",
     cards: [
       { id: '1a', pattern: 'A', type: 'sequence', content: <div className="text-center font-mono font-bold text-blue-900">2, 4, 8, 16, ...</div> },
       { id: '1b', pattern: 'A', type: 'table', content: <TableCard nValues={[1,2,3]} values={[2,4,8]} /> },
@@ -72,8 +74,8 @@ const STAGES: Stage[] = [
     ]
   },
   {
-    hintA: "Constant growth (+5)",
-    hintB: "Doubling growth (x2)",
+    hintA: "add 5 each time",
+    hintB: "multiply by 2 each time",
     cards: [
       { id: '2a', pattern: 'A', type: 'sequence', content: <div className="text-center font-mono font-bold text-sky-900">5, 10, 15, 20, ...</div> },
       { id: '2b', pattern: 'A', type: 'table', content: <TableCard nValues={[1,2,3]} values={[5,10,15]} /> },
@@ -95,7 +97,7 @@ const DraggableCard: React.FC<{ card: Card; status?: 'correct' | 'incorrect' }> 
   }), [card]);
 
   return (
-    <div ref={drag} className={`bg-white text-gray-800 p-3 rounded-xl shadow-lg border-2 transition-all cursor-grab active:cursor-grabbing w-full h-32 flex flex-col items-center justify-center ${isDragging ? 'opacity-40' : 'opacity-100'} ${status === 'correct' ? 'border-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]' : status === 'incorrect' ? 'border-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.5)]' : 'border-gray-200 hover:border-sky-400'}`}>
+    <div ref={drag} className={`bg-white text-gray-800 p-4 rounded-xl shadow-lg border-2 transition-all cursor-grab active:cursor-grabbing w-full h-40 flex flex-col items-center justify-center ${isDragging ? 'opacity-40' : 'opacity-100'} ${status === 'correct' ? 'border-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]' : status === 'incorrect' ? 'border-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.5)]' : 'border-gray-200 hover:border-sky-400'}`}>
       <span className="text-[8px] uppercase font-bold text-gray-400 mb-2 self-start">{card.type}</span>
       <div className="flex-grow flex items-center justify-center w-full px-1">{card.content}</div>
     </div>
@@ -103,7 +105,6 @@ const DraggableCard: React.FC<{ card: Card; status?: 'correct' | 'incorrect' }> 
 };
 
 const DropZone: React.FC<{ id: PatternID; onDrop: (cardId: string) => void; children: React.ReactNode; hint: string; }> = ({ id, onDrop, children, hint }) => {
-  const [showHint, setShowHint] = useState(false);
   const [{ isOver }, drop] = useDrop(() => ({
     accept: 'card',
     drop: (item: { id: string }) => onDrop(item.id),
@@ -113,8 +114,10 @@ const DropZone: React.FC<{ id: PatternID; onDrop: (cardId: string) => void; chil
   return (
     <div ref={drop} className={`min-h-[450px] rounded-3xl p-6 transition-colors border-4 border-dashed ${isOver ? 'bg-sky-500/10 border-sky-400' : 'bg-gray-800/40 border-gray-700'}`}>
       <div className="flex justify-between items-center mb-6">
-        <h3 className="text-2xl font-black text-sky-400 italic">Pattern {id}</h3>
-        <button onClick={() => setShowHint(!showHint)} className="text-xs bg-sky-900/50 hover:bg-sky-800 text-sky-300 px-3 py-1.5 rounded-full border border-sky-700/50 font-bold transition-all">{showHint ? hint : 'Hint?'}</button>
+        <div className="text-center w-full">
+          <h3 className="text-xl font-black text-sky-400 mb-1">Pattern {id}</h3>
+          <p className="text-sm text-gray-400">{hint}</p>
+        </div>
       </div>
       <div className="grid grid-cols-2 gap-4">{children}</div>
     </div>
@@ -128,6 +131,7 @@ const Loop2Level2Inner: React.FC<LevelComponentProps> = ({ onComplete, onExit, p
   const [validationStatus, setValidationStatus] = useState<Record<string, 'correct' | 'incorrect' | null>>({});
   const [feedback, setFeedback] = useState<{ type: 'correct' | 'incorrect'; message?: string } | null>(null);
   const [isAllComplete, setIsAllComplete] = useState(false);
+  const [isGlossaryOpen, setIsGlossaryOpen] = useState(false);
   const isCompletedRef = useRef(false);
 
   const currentStage = STAGES[stageIdx];
@@ -189,7 +193,7 @@ const Loop2Level2Inner: React.FC<LevelComponentProps> = ({ onComplete, onExit, p
         }
       }, 1500);
     } else {
-      setFeedback({ type: 'incorrect', message: "Some cards are in the wrong place. Check the colors!" });
+      setFeedback({ type: 'incorrect', message: "Some cards are in the wrong place. Check their patterns carefully." });
     }
   };
 
@@ -206,8 +210,8 @@ const Loop2Level2Inner: React.FC<LevelComponentProps> = ({ onComplete, onExit, p
 
   return (
     <div className="flex flex-col items-center min-h-full p-6 text-white font-sans max-w-7xl mx-auto">
-      <h1 className="text-4xl font-black mb-2 text-sky-400 italic uppercase">Pattern Match Gallery</h1>
-      
+      <GlossaryButton onClick={() => setIsGlossaryOpen(true)} />
+      <GlossaryModal isOpen={isGlossaryOpen} onClose={() => setIsGlossaryOpen(false)} />
       <div className="flex gap-4 mb-8">
         {STAGES.map((_, i) => (
           <button
@@ -219,11 +223,11 @@ const Loop2Level2Inner: React.FC<LevelComponentProps> = ({ onComplete, onExit, p
         ))}
       </div>
 
-      <p className="text-center text-white mb-6 text-xl font-medium animate-fade-in">
-        Match the representations that describe the same pattern.
+      <p className="text-center text-white mb-6 text-2xl font-bold leading-relaxed animate-fade-in">
+        Sort the cards into Pattern A or Pattern B based on which pattern they describe.
       </p>
 
-      {feedback && <div className={`fixed top-24 px-8 py-3 rounded-2xl font-bold shadow-2xl z-50 animate-fade-in ${feedback.type === 'correct' ? 'bg-emerald-500' : 'bg-rose-600 border-2 border-rose-400'}`}>{feedback.message}</div>}
+      {feedback && <div className={`fixed top-24 px-8 py-3 rounded-2xl font-semibold shadow-2xl z-50 animate-fade-in ${feedback.type === 'correct' ? 'text-emerald-400' : 'text-yellow-400'}`}>{feedback.message}</div>}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 w-full">
         <DropZone id="A" hint={currentStage.hintA} onDrop={id => handleDrop(id, 'A')}>{bucketA.map(id => <DraggableCard key={id} card={currentStage.cards.find(c => c.id === id)!} status={validationStatus[id] || undefined} />)}</DropZone>
         <div className="bg-gray-900/60 rounded-3xl p-6 border-2 border-gray-800 shadow-inner flex flex-col">
@@ -232,7 +236,7 @@ const Loop2Level2Inner: React.FC<LevelComponentProps> = ({ onComplete, onExit, p
         </div>
         <DropZone id="B" hint={currentStage.hintB} onDrop={id => handleDrop(id, 'B')}>{bucketB.map(id => <DraggableCard key={id} card={currentStage.cards.find(c => c.id === id)!} status={validationStatus[id] || undefined} />)}</DropZone>
       </div>
-      <button onClick={handleCheck} className="mt-12 bg-sky-600 hover:bg-sky-500 px-12 py-4 rounded-2xl font-black text-xl shadow-lg transition-transform hover:scale-105">Check Answers</button>
+      <button onClick={handleCheck} className="mt-12 bg-sky-600 hover:bg-sky-500 px-12 py-4 rounded-2xl font-black text-xl shadow-lg transition-transform hover:scale-105">Check</button>
     </div>
   );
 };

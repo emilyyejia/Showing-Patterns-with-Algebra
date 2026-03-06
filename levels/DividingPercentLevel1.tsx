@@ -3,6 +3,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import type { LevelComponentProps } from '../types';
 import InstructionButton from '../components/InstructionButton';
 import InstructionModal from '../components/InstructionModal';
+import GlossaryButton from '../components/GlossaryButton';
+import GlossaryModal from '../components/GlossaryModal';
 
 const StarIcon: React.FC<{ filled: boolean; className?: string }> = ({ filled, className = "w-12 h-12" }) => (
     <svg className={`${className} ${filled ? 'text-yellow-400' : 'text-slate-300'}`} fill="currentColor" viewBox="0 0 20 20">
@@ -23,6 +25,7 @@ const DividingPercentLevel1: React.FC<LevelComponentProps> = ({ onComplete, onEx
   const [input, setInput] = useState('');
   const [feedback, setFeedback] = useState<{ type: 'correct' | 'incorrect'; message?: string } | null>(null);
   const [isInstructionOpen, setIsInstructionOpen] = useState(false);
+  const [isGlossaryOpen, setIsGlossaryOpen] = useState(false);
   const [showCompletionModal, setShowCompletionModal] = useState(false);
   const [earnedStars, setEarnedStars] = useState(0);
 
@@ -77,6 +80,8 @@ const DividingPercentLevel1: React.FC<LevelComponentProps> = ({ onComplete, onEx
 
   return (
     <div className="flex flex-col items-center justify-center min-h-full p-6 text-white font-sans max-w-4xl mx-auto relative">
+      <GlossaryButton onClick={() => setIsGlossaryOpen(true)} />
+      <GlossaryModal isOpen={isGlossaryOpen} onClose={() => setIsGlossaryOpen(false)} />
       <InstructionButton onClick={() => setIsInstructionOpen(true)} />
       <InstructionModal
         isOpen={isInstructionOpen}

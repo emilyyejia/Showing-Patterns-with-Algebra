@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import type { LevelComponentProps } from '../types';
 import InstructionButton from '../components/InstructionButton';
 import InstructionModal from '../components/InstructionModal';
+import GlossaryButton from '../components/GlossaryButton';
+import GlossaryModal from '../components/GlossaryModal';
 
 type TaskNum = 1 | 2;
 
@@ -25,6 +27,7 @@ const Loop4Level1: React.FC<LevelComponentProps> = ({ onComplete, onExit, partia
   const [isAllComplete, setIsAllComplete] = useState(false);
   const [earnedStars, setEarnedStars] = useState(0);
   const [validationStatus, setValidationStatus] = useState<Record<string, 'correct' | 'incorrect' | null>>({});
+  const [isGlossaryOpen, setIsGlossaryOpen] = useState(false);
 
   const isCompletedRef = useRef(false);
 
@@ -91,7 +94,7 @@ const Loop4Level1: React.FC<LevelComponentProps> = ({ onComplete, onExit, partia
     } else {
       setValidationStatus(prev => ({ ...prev, s6: 'incorrect' }));
       setMistakes(m => m + 1);
-      showFeedback('incorrect', `Hint: Substitute ${task === 1 ? 'n = 7' : 't = 7'} into your expression.`);
+      showFeedback('incorrect', `Substitute 7 to ${task === 1 ? 'n' : 't'}.`);
     }
   };
 
@@ -157,7 +160,8 @@ const Loop4Level1: React.FC<LevelComponentProps> = ({ onComplete, onExit, partia
 
   return (
     <div className="flex flex-col items-center min-h-full p-6 text-white font-sans max-w-6xl mx-auto relative">
-      <h1 className="text-3xl font-black mb-8 text-sky-400 italic uppercase tracking-tighter">Algebraic Expression Builder</h1>
+      <GlossaryButton onClick={() => setIsGlossaryOpen(true)} />
+      <GlossaryModal isOpen={isGlossaryOpen} onClose={() => setIsGlossaryOpen(false)} />
       <div className="flex gap-4 mb-8">
         {[1, 2, 3, 4, 5, 6].map(i => (
           <button
@@ -181,7 +185,7 @@ const Loop4Level1: React.FC<LevelComponentProps> = ({ onComplete, onExit, partia
         {!isReady ? (
           <div className="bg-gray-800 p-12 rounded-3xl text-center shadow-2xl border border-indigo-500/30 max-w-xl mx-auto">
             <h2 className="text-2xl font-bold mb-8 leading-relaxed">
-              We are going to write {task === 2 ? 'another' : 'an'} algebraic <span className="text-sky-400 underline underline-offset-8">expression to represent a pattern</span>. Are you ready?
+              We are going to write {task === 2 ? 'another' : 'an'} algebraic expression to represent a pattern. Are you ready?
             </h2>
             <button
               onClick={() => setIsReady(true)}
@@ -195,7 +199,6 @@ const Loop4Level1: React.FC<LevelComponentProps> = ({ onComplete, onExit, partia
             <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-10">
               <div className="space-y-6">
                 <div className="bg-gray-900/60 p-6 rounded-3xl border border-indigo-500/30">
-                  <h3 className="text-center text-gray-500 uppercase text-xs font-bold mb-4 tracking-widest">{task === 1 ? 'Pattern 1' : 'Pattern 2'}</h3>
                   <h2 className="text-4xl font-mono text-indigo-300 text-center mb-6">{task === 1 ? '2, 5, 8, 11, ...' : '4, 7, 10, 13, ...'}</h2>
                   <table className="w-full border-collapse bg-gray-800 rounded-xl border border-gray-700">
                     <thead className="bg-gray-700 text-xs uppercase">
@@ -229,7 +232,7 @@ const Loop4Level1: React.FC<LevelComponentProps> = ({ onComplete, onExit, partia
 
               <div className="bg-gray-900/40 p-8 rounded-3xl border border-gray-700 shadow-inner space-y-8">
                 <div className={`transition-opacity duration-500 ${step >= 1 ? 'opacity-100' : 'opacity-20'}`}>
-                  <h3 className="text-lg font-black text-sky-300 mb-1 uppercase tracking-tighter">Step 1: Find the change</h3>
+                  <h3 className="text-lg font-black text-sky-300 mb-1 tracking-tighter">Step 1: Find the constant difference. How much does the number increase each time?</h3>
                   {step === 1 ? (
                     <div className="flex gap-2">
                       <input
@@ -238,15 +241,15 @@ const Loop4Level1: React.FC<LevelComponentProps> = ({ onComplete, onExit, partia
                         className={`bg-gray-900 border-2 rounded p-2 flex-grow font-mono transition-colors ${validationStatus.s1 === 'correct' ? 'border-emerald-500' : validationStatus.s1 === 'incorrect' ? 'border-rose-500' : 'border-sky-500'}`}
                         placeholder="..."
                       />
-                      <button onClick={() => handleStepCheck('3', 's1', 2, "Check the gap between numbers.")} className="bg-sky-600 px-6 rounded font-black uppercase">Check</button>
+                      <button onClick={() => handleStepCheck('3', 's1', 2, "Try again! What does the constant difference mean?")} className="bg-sky-600 px-6 rounded font-black uppercase">Check</button>
                     </div>
                   ) : (
                     <div className="p-3 bg-gray-900/50 text-emerald-400 font-black border border-emerald-500/30 rounded-xl animate-fade-in text-xl">3</div>
                   )}
                 </div>
 
-                <div className={`transition-opacity duration-500 ${step >= 2 ? 'opacity-100' : 'opacity-20'}`}>
-                  <h3 className="text-lg font-black text-sky-300 mb-1 uppercase tracking-tighter">Step 2: Multiply by {task === 1 ? 'n' : 't'}</h3>
+                <div className={`transition-opacity duration-500 ${step >= 2 ? 'opacity-100' : 'hidden'}`}>
+                  <h3 className="text-lg font-black text-sky-300 mb-1 tracking-tighter">Step 2: Use the term number {task === 1 ? 'n' : 't'}. If each term increases by 3, how many would there be after {task === 1 ? 'n' : 't'} terms? Write an expression.</h3>
                   {step === 2 ? (
                     <div className="flex gap-2">
                       <input
@@ -262,8 +265,8 @@ const Loop4Level1: React.FC<LevelComponentProps> = ({ onComplete, onExit, partia
                   )}
                 </div>
 
-                <div className={`transition-opacity duration-500 ${step >= 3 ? 'opacity-100' : 'opacity-20'}`}>
-                  <h3 className="text-lg font-black text-sky-300 mb-1 uppercase tracking-tighter">Step 3: Check term 1</h3>
+                <div className={`transition-opacity duration-500 ${step >= 3 ? 'opacity-100' : 'hidden'}`}>
+                  <h3 className="text-lg font-black text-sky-300 mb-1 tracking-tighter">Step 3: Check the first term. Use your expression 3{task === 1 ? 'n' : 't'}. What do you get when {task === 1 ? 'n' : 't'} = 1?</h3>
                   {step === 3 ? (
                     <div className="flex gap-2">
                       <input
@@ -272,15 +275,15 @@ const Loop4Level1: React.FC<LevelComponentProps> = ({ onComplete, onExit, partia
                         className={`bg-gray-900 border-2 rounded p-2 flex-grow font-mono transition-colors ${validationStatus.s3 === 'correct' ? 'border-emerald-500' : validationStatus.s3 === 'incorrect' ? 'border-rose-500' : 'border-sky-500'}`}
                         placeholder="..."
                       />
-                      <button onClick={() => handleStepCheck('3', 's3', 4, "What is 3 times 1?")} className="bg-sky-600 px-6 rounded font-black uppercase">Check</button>
+                      <button onClick={() => handleStepCheck('3', 's3', 4, "Check your calculation.")} className="bg-sky-600 px-6 rounded font-black uppercase">Check</button>
                     </div>
                   ) : (
                     <div className="p-3 bg-gray-900/50 text-emerald-400 font-black border border-emerald-500/30 rounded-xl animate-fade-in text-xl">3</div>
                   )}
                 </div>
 
-                <div className={`transition-opacity duration-500 ${step >= 4 ? 'opacity-100' : 'opacity-20'}`}>
-                  <h3 className="text-lg font-black text-sky-300 mb-1 uppercase tracking-tighter">Step 4: Fix it</h3>
+                <div className={`transition-opacity duration-500 ${step >= 4 ? 'opacity-100' : 'hidden'}`}>
+                  <h3 className="text-lg font-black text-sky-300 mb-1 tracking-tighter">Step 4: Fix the starting value. The first term value is {task === 1 ? '2' : '4'}, not 3. What should we do to the expression?</h3>
                   {step === 4 ? (
                     <div className="flex gap-2">
                       <select
@@ -290,20 +293,22 @@ const Loop4Level1: React.FC<LevelComponentProps> = ({ onComplete, onExit, partia
                       >
                         <option value="">Select...</option>
                         <option value="add 1">add 1</option>
+                        <option value="add 3">add 3</option>
                         <option value="subtract 1">subtract 1</option>
+                        <option value="multiply by 2">multiply by 2</option>
+                        <option value="change n to 0">change n to 0</option>
                       </select>
-                      <button onClick={() => handleStepCheck(task === 1 ? 'subtract 1' : 'add 1', 's4', 5, "Compare 3 to the actual start.")} className="bg-sky-600 px-6 rounded font-black uppercase">Check</button>
+                      <button onClick={() => handleStepCheck(task === 1 ? 'subtract 1' : 'add 1', 's4', 5, "Try again!")} className="bg-sky-600 px-6 rounded font-black uppercase">Check</button>
                     </div>
                   ) : (
                     <div className="p-3 bg-gray-900/50 text-emerald-400 font-black border border-emerald-500/30 rounded-xl animate-fade-in text-xl">{task === 1 ? 'subtract 1' : 'add 1'}</div>
                   )}
                 </div>
 
-                <div className={`transition-opacity duration-500 ${step >= 5 ? 'opacity-100' : 'opacity-20'}`}>
-                  <h3 className="text-lg font-black text-sky-300 mb-2 uppercase tracking-tighter">Step 5: Assemble the Rule</h3>
+                <div className={`transition-opacity duration-500 ${step >= 5 ? 'opacity-100' : 'hidden'}`}>
+                  <h3 className="text-lg font-black text-sky-300 mb-2 tracking-tighter">Step 5: Write the algebraic rule for the pattern. Combine step 2 and step 4 answers.</h3>
                   {step === 5 ? (
                     <div className="flex flex-col gap-3">
-                      <p className="text-xs text-slate-400 italic">Combine the parts from Step 2 and Step 4</p>
                       <div className="flex gap-2">
                           <input
                               value={inputs.s5 || ''}
@@ -311,14 +316,14 @@ const Loop4Level1: React.FC<LevelComponentProps> = ({ onComplete, onExit, partia
                               className={`bg-gray-900 border-2 rounded p-2 flex-grow font-mono text-xl transition-colors ${validationStatus.s5 === 'correct' ? 'border-emerald-500' : validationStatus.s5 === 'incorrect' ? 'border-rose-500' : 'border-sky-500'}`}
                               placeholder="5n + 10"
                           />
-                          <button onClick={() => handleStepCheck(task === 1 ? '3n - 1' : '3t + 1', 's5', 6, "Combine Step 2 and Step 4 into one expression.")} className="bg-sky-600 px-6 rounded font-black uppercase">Verify</button>
+                          <button onClick={() => handleStepCheck(task === 1 ? '3n - 1' : '3t + 1', 's5', 6, "Try again!")} className="bg-sky-600 px-6 rounded font-black uppercase">Verify</button>
                       </div>
                     </div>
                   ) : (
                     <div className="bg-gray-900 p-4 rounded-2xl flex justify-center gap-6 text-3xl font-mono border border-slate-700 shadow-inner relative group">
                       <div className="flex flex-col items-center">
                           <span className="text-sky-400">3</span>
-                          <span className="text-[8px] uppercase text-slate-500 mt-1">Difference</span>
+                          <span className="text-[8px] uppercase text-slate-500 mt-1">constant difference</span>
                       </div>
                       <div className="flex flex-col items-center">
                           <span className="text-indigo-400">{task === 1 ? 'n' : 't'}</span>
@@ -334,8 +339,7 @@ const Loop4Level1: React.FC<LevelComponentProps> = ({ onComplete, onExit, partia
 
                 {step === 6 && (
                   <div className="animate-fade-in-up border-t border-indigo-500/20 pt-4">
-                    <h3 className="text-lg font-black text-emerald-400 mb-1 uppercase tracking-tighter">Step 6: Use the Rule</h3>
-                    <p className="text-sm mb-3 text-slate-300 italic">If {task === 1 ? 'n = 7' : 't = 6'}, what is the value?</p>
+                    <h3 className="text-lg font-black text-emerald-400 mb-1 tracking-tighter">Step 6: Check your work. What is 3{task === 1 ? 'n' : 't'} - 1 when {task === 1 ? 'n' : 't'} = 7?</h3>
                     <div className="flex gap-2">
                       <input
                         value={inputs.s6 || ''}

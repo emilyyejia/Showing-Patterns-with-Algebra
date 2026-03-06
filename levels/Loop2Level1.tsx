@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import type { LevelComponentProps } from '../types';
 import InstructionButton from '../components/InstructionButton';
 import InstructionModal from '../components/InstructionModal';
+import GlossaryButton from '../components/GlossaryButton';
+import GlossaryModal from '../components/GlossaryModal';
 
 const StarIcon: React.FC<{ filled: boolean; className?: string }> = ({ filled, className = "w-12 h-12" }) => (
     <svg className={`${className} ${filled ? 'text-yellow-400' : 'text-slate-300'}`} fill="currentColor" viewBox="0 0 20 20">
@@ -23,6 +25,7 @@ const Loop2Level1: React.FC<LevelComponentProps> = ({ onComplete, onExit, partia
   const [earnedStars, setEarnedStars] = useState(0);
   const [feedback, setFeedback] = useState<{ type: 'correct' | 'incorrect'; message?: string } | null>(null);
   const [validationStatus, setValidationStatus] = useState<Record<string, 'correct' | 'incorrect' | null>>({});
+  const [isGlossaryOpen, setIsGlossaryOpen] = useState(false);
   
   const isCompletedRef = useRef(false);
 
@@ -80,9 +83,7 @@ const Loop2Level1: React.FC<LevelComponentProps> = ({ onComplete, onExit, partia
       }, 1500);
     } else {
       setAttempts(a => a + 1);
-      let msg = "Not quite right. Check those representations again!";
-      if (!isQ1Correct) msg = "Look closely at the numbers in each example.";
-      setFeedback({ type: 'incorrect', message: msg });
+      setFeedback({ type: 'incorrect', message: "Not quite right. Check each representation carefully!" });
     }
   };
 
@@ -108,6 +109,8 @@ const Loop2Level1: React.FC<LevelComponentProps> = ({ onComplete, onExit, partia
 
   return (
     <div className="flex flex-col items-center justify-center min-h-full p-6 text-white font-sans max-w-6xl mx-auto relative select-none">
+      <GlossaryButton onClick={() => setIsGlossaryOpen(true)} />
+      <GlossaryModal isOpen={isGlossaryOpen} onClose={() => setIsGlossaryOpen(false)} />
       <InstructionModal
         isOpen={isInstructionOpen}
         onClose={() => setIsInstructionOpen(false)}
@@ -118,16 +121,18 @@ const Loop2Level1: React.FC<LevelComponentProps> = ({ onComplete, onExit, partia
       </InstructionModal>
 
       <InstructionButton onClick={() => setIsInstructionOpen(true)} />
-
-      <h1 className="text-3xl font-bold mb-8 text-sky-300 uppercase italic">Algebraic Representations</h1>
       
-      <div className="w-full max-w-4xl bg-gray-800 rounded-3xl p-8 shadow-2xl border border-gray-700 relative mb-10">
-        <div className="bg-gray-900 p-8 rounded-2xl mb-10 flex flex-col items-center shadow-inner border border-gray-700">
-          <span className="text-[10px] uppercase font-black text-indigo-400 mb-2 tracking-[0.3em]">Number Sequence</span>
-          <div className="text-5xl font-mono tracking-[0.2em] text-indigo-300 drop-shadow-lg">2, 5, 8, 11...</div>
-        </div>
+      <div className="w-full max-w-6xl bg-gray-800 rounded-3xl p-8 shadow-2xl border border-gray-700 relative mb-10">
+        <p className="text-center text-white mb-6 text-2xl font-bold leading-relaxed">Examine the representations below and answer the questions.</p>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Left side: Visuals */}
+          <div className="space-y-6">
+            <div className="bg-gray-900 p-8 rounded-2xl flex flex-col items-center shadow-inner border border-gray-700">
+              <div className="text-5xl font-mono tracking-[0.2em] text-indigo-300 drop-shadow-lg">2, 5, 8, 11...</div>
+            </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+        <div className="grid grid-cols-1 gap-6">
           {/* Table Card */}
           <div className="bg-gray-900/50 p-6 rounded-2xl border border-gray-700 flex flex-col items-center shadow-lg">
             <h2 className="text-xs font-black text-gray-500 uppercase mb-4 tracking-[0.2em] w-full border-b border-gray-700 pb-2">Table</h2>
@@ -164,10 +169,13 @@ const Loop2Level1: React.FC<LevelComponentProps> = ({ onComplete, onExit, partia
                 <svg viewBox="-20 -10 140 120" className="w-full h-full">
                   <line x1="0" y1="0" x2="0" y2="100" stroke="#94a3b8" strokeWidth="2" />
                   <line x1="0" y1="100" x2="100" y2="100" stroke="#94a3b8" strokeWidth="2" />
-                  {[0, 2, 4].map(v => (<text key={`x-${v}`} x={v*25} y="112" fontSize="7" textAnchor="middle" fill="#64748b" className="font-bold">{v}</text>))}
-                  {[0, 5, 10].map(v => (<text key={`y-${v}`} x="-10" y={100 - (v*8)} fontSize="7" textAnchor="end" fill="#64748b" dominantBaseline="middle" className="font-bold">{v}</text>))}
-                  <polyline points={[1,2,3,4].map(n => `${n*20},${100 - (2+(n-1)*3)*8}`).join(' ')} fill="none" stroke="#4f46e5" strokeWidth="2" strokeDasharray="4 2" opacity="0.3" />
-                  {[1, 2, 3, 4].map(n => (<circle key={n} cx={n * 20} cy={100 - (2+(n-1)*3)*8} r="3" fill="#4f46e5" />))}
+                  {[0, 1, 2, 3, 4].map(v => (<text key={`x-${v}`} x={v*20} y="112" fontSize="7" textAnchor="middle" fill="#64748b" className="font-bold">{v}</text>))}
+                  {[0, 2, 5, 8, 11].map(v => (<text key={`y-${v}`} x="-10" y={100 - (v*7)} fontSize="7" textAnchor="end" fill="#64748b" dominantBaseline="middle" className="font-bold">{v}</text>))}
+                  <polyline points="20,86 40,65 60,44 80,23" fill="none" stroke="#4f46e5" strokeWidth="2" strokeDasharray="4 2" opacity="0.3" />
+                  <circle cx="20" cy="86" r="3" fill="#4f46e5" />
+                  <circle cx="40" cy="65" r="3" fill="#4f46e5" />
+                  <circle cx="60" cy="44" r="3" fill="#4f46e5" />
+                  <circle cx="80" cy="23" r="3" fill="#4f46e5" />
                 </svg>
               </div>
             </div>
@@ -190,10 +198,13 @@ const Loop2Level1: React.FC<LevelComponentProps> = ({ onComplete, onExit, partia
             </div>
           </div>
         </div>
+          </div>
 
-        <div className="bg-indigo-950/40 p-8 rounded-3xl border border-indigo-400/20 space-y-10">
-          <div className={`p-6 rounded-2xl border-2 transition-colors ${validationStatus.q1 === 'correct' ? 'border-emerald-500 bg-emerald-500/5' : validationStatus.q1 === 'incorrect' ? 'border-rose-500 bg-rose-500/5' : 'border-transparent'}`}>
-            <h3 className="text-lg font-bold mb-4 text-indigo-100 uppercase tracking-tight">1. Do these representations show the same pattern?</h3>
+          {/* Right side: Questions */}
+          <div className="bg-indigo-950/40 p-8 rounded-3xl border border-indigo-400/20 space-y-10">
+            {validationStatus.q1 !== 'correct' && (
+              <div className={`p-6 rounded-2xl border-2 transition-colors ${validationStatus.q1 === 'incorrect' ? 'border-rose-500 bg-rose-500/5' : 'border-transparent'}`}>
+                <h3 className="text-lg font-bold mb-4 text-indigo-100">1. Do these representations show the same pattern?</h3>
             <div className="flex gap-8">
               {['Yes', 'No'].map(choice => (
                 <label key={choice} className="flex items-center gap-3 cursor-pointer group">
@@ -202,28 +213,34 @@ const Loop2Level1: React.FC<LevelComponentProps> = ({ onComplete, onExit, partia
                 </label>
               ))}
             </div>
-          </div>
+              </div>
+            )}
           
-          <div className={`p-6 rounded-2xl border-2 transition-colors ${validationStatus.q2 === 'correct' ? 'border-emerald-500 bg-emerald-500/5' : validationStatus.q2 === 'incorrect' ? 'border-rose-500 bg-rose-500/5' : 'border-transparent'}`}>
-            <h3 className="text-lg font-bold mb-4 text-indigo-100 uppercase tracking-tight">2. Select TWO things that stay the same:</h3>
+          {validationStatus.q1 === 'correct' && (
+          <div className={`p-6 rounded-2xl border-2 transition-colors ${validationStatus.q2 === 'correct' ? 'border-emerald-500 bg-emerald-500/5' : 'border-transparent'}`}>
+            <h3 className="text-lg font-bold mb-4 text-indigo-100">1. Select two things that stay the same:</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {[
                 { id: 'adds3', label: 'Adds 3 each time' }, 
                 { id: 'startsSame', label: 'Starts at same value' }, 
                 { id: 'looksSame', label: 'They look identical' }, 
                 { id: 'diffNumbers', label: 'Uses different math' }
-              ].map(opt => (
-                <label key={opt.id} className={`flex items-center gap-3 bg-gray-900/60 p-4 rounded-xl border transition-all cursor-pointer group ${q2[opt.id] ? (validationStatus.q2 === 'incorrect' ? 'border-rose-500' : 'border-sky-500/50') : 'border-white/5 hover:border-sky-500/30'}`}>
+              ].map(opt => {
+                const isWrong = validationStatus.q2 === 'incorrect' && q2[opt.id] && ((opt.id === 'looksSame') || (opt.id === 'diffNumbers'));
+                return (
+                <label key={opt.id} className={`flex items-center gap-3 bg-gray-900/60 p-4 rounded-xl border-2 transition-all cursor-pointer group ${isWrong ? 'border-rose-500' : q2[opt.id] ? 'border-sky-500/50' : 'border-white/5 hover:border-sky-500/30'}`}>
                   <input type="checkbox" className="w-6 h-6 accent-emerald-500" checked={q2[opt.id]} onChange={() => handleQ2Toggle(opt.id)} />
-                  <span className={`text-sm font-bold ${q2[opt.id] ? (validationStatus.q2 === 'incorrect' ? 'text-rose-400' : 'text-white') : 'text-slate-500 group-hover:text-slate-300'}`}>{opt.label}</span>
+                  <span className={`text-sm font-bold ${isWrong ? 'text-rose-400' : q2[opt.id] ? 'text-white' : 'text-slate-500 group-hover:text-slate-300'}`}>{opt.label}</span>
                 </label>
-              ))}
+                );
+              })}
             </div>
           </div>
+          )}
 
           {feedback && (
-            <div className={`px-6 py-2 rounded-xl font-bold shadow-lg animate-fade-in text-center ${
-              feedback.type === 'correct' ? 'bg-emerald-500 text-white' : 'bg-rose-600 text-white border-2 border-rose-400'
+            <div className={`px-6 py-4 rounded-xl font-semibold shadow-lg animate-fade-in ${
+              feedback.type === 'correct' ? 'text-emerald-400' : 'text-yellow-400'
             }`}>
               {feedback.message}
             </div>
@@ -233,8 +250,9 @@ const Loop2Level1: React.FC<LevelComponentProps> = ({ onComplete, onExit, partia
             onClick={validate} 
             className="w-full bg-sky-600 hover:bg-sky-500 px-10 py-4 rounded-xl font-black text-xl transition-all shadow-lg hover:scale-105 active:scale-95 uppercase tracking-wider"
           >
-            Check Answers
+            Check
           </button>
+          </div>
         </div>
       </div>
     </div>

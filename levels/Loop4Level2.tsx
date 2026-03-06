@@ -3,6 +3,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import type { LevelComponentProps } from '../types';
+import GlossaryButton from '../components/GlossaryButton';
+import GlossaryModal from '../components/GlossaryModal';
 
 const DRAGGABLE_ITEMS = [
   { id: 'cd', label: 'Constant difference' },
@@ -54,6 +56,7 @@ const Loop4Level2Inner: React.FC<LevelComponentProps> = ({ onComplete, onExit, p
   const [isAllComplete, setIsAllComplete] = useState(false);
   const [earnedStars, setEarnedStars] = useState(0);
   const [validationStatus, setValidationStatus] = useState<Record<string, 'correct' | 'incorrect' | null>>({});
+  const [isGlossaryOpen, setIsGlossaryOpen] = useState(false);
 
   const isCompletedRef = useRef(false);
 
@@ -115,7 +118,7 @@ const Loop4Level2Inner: React.FC<LevelComponentProps> = ({ onComplete, onExit, p
     if (s1Placed.con === 'con') status.con = 'correct'; else { status.con = 'incorrect'; allOk = false; }
     setS1Status(status);
     if (allOk) showCorrect(2);
-    else showIncorrect("Check labels: 5 is the difference, y is the variable, 3 is the adjustment.");
+    else showIncorrect("Try again! Check the glossary and review the terms.");
   };
 
   const checkS2 = () => {
@@ -133,7 +136,7 @@ const Loop4Level2Inner: React.FC<LevelComponentProps> = ({ onComplete, onExit, p
     });
 
     if (sCD && sV && sCon && sEx) showCorrect(3);
-    else showIncorrect("Check the registration fee ($15) as the constant.");
+    else showIncorrect("Try again!");
   };
 
   const checkS3 = () => {
@@ -151,7 +154,7 @@ const Loop4Level2Inner: React.FC<LevelComponentProps> = ({ onComplete, onExit, p
     });
 
     if (sCD && sV && sCon && sEx) showCorrect(4);
-    else showIncorrect("The adjustment is Term 0: Term 1 (-3) - 5 = -8.");
+    else showIncorrect("Try again!");
   };
 
   const checkS4 = () => {
@@ -167,7 +170,7 @@ const Loop4Level2Inner: React.FC<LevelComponentProps> = ({ onComplete, onExit, p
     });
 
     if (sCD && sV && sEx) showCorrect(null);
-    else showIncorrect("The rule is 3 times the width (3w).");
+    else showIncorrect("Think about the relationship: L depends on w. How does L grow as w grows?");
   };
 
   const goToStep = (i: number) => {
@@ -199,7 +202,8 @@ const Loop4Level2Inner: React.FC<LevelComponentProps> = ({ onComplete, onExit, p
 
   return (
     <div className="flex flex-col items-center justify-center min-h-full p-6 text-white font-sans max-w-6xl mx-auto relative select-none">
-      <h1 className="text-3xl font-bold mb-8 text-sky-300 uppercase italic">Expression Detective</h1>
+      <GlossaryButton onClick={() => setIsGlossaryOpen(true)} />
+      <GlossaryModal isOpen={isGlossaryOpen} onClose={() => setIsGlossaryOpen(false)} />
       <div className="flex gap-4 mb-10">
         {[1, 2, 3, 4].map(i => (
           <button
@@ -222,7 +226,7 @@ const Loop4Level2Inner: React.FC<LevelComponentProps> = ({ onComplete, onExit, p
       <div className="w-full max-w-4xl bg-gray-800 rounded-3xl p-8 shadow-2xl border border-gray-700 relative mb-10">
         {step === 1 && (
           <div className="animate-fade-in flex flex-col items-center">
-            <h2 className="text-xl font-bold text-indigo-300 mb-12 uppercase tracking-widest italic border-b border-indigo-500/30 pb-2">Deconstruct the Parts</h2>
+            <h2 className="text-xl font-bold text-white mb-12 text-center leading-relaxed">Read each term and drag it under the part of the expression it describes.</h2>
             <div className="flex items-center gap-4 text-8xl font-mono mb-16 relative">
               <div className="flex flex-col items-center">
                 <span>5</span>
@@ -250,25 +254,26 @@ const Loop4Level2Inner: React.FC<LevelComponentProps> = ({ onComplete, onExit, p
                 onClick={checkS1} 
                 className="mt-12 w-full bg-sky-600 hover:bg-sky-500 py-4 rounded-xl font-black text-xl shadow-lg transition-all hover:scale-105 active:scale-95 uppercase tracking-wider"
             >
-                Check labels
+                Check
             </button>
           </div>
         )}
         {step === 2 && (
           <div className="animate-fade-in space-y-10 flex flex-col items-center">
-            <div className="bg-indigo-950/40 p-8 rounded-[2.5rem] border border-indigo-500/20 italic text-xl text-center leading-relaxed max-w-2xl">"A gym charges <span className="text-sky-400 font-bold">$20 per month</span> plus a <span className="text-sky-400 font-bold">$15 signup fee</span>. Let <span className="text-amber-400">m</span> be the number of months."</div>
+            <h2 className="text-xl font-bold text-white mb-6 text-center">Find constant difference, variable, and constant. Then, write an algebraic expression.</h2>
+            <div className="bg-indigo-950/40 p-10 rounded-[2.5rem] border border-indigo-500/20 italic text-2xl text-center leading-relaxed max-w-2xl">"A gym charges <span className="font-bold">$20 per month</span> plus a <span className="font-bold">$15 signup fee</span>. Let <span className="font-bold">m</span> be the number of months."</div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
               <div className="flex flex-col gap-2">
                 <span className="text-[10px] uppercase font-bold text-slate-500 tracking-widest text-center">Difference</span>
-                <input placeholder="CD" value={inputs.s2cd} onChange={e => { setInputs({ ...inputs, s2cd: e.target.value }); setFeedback(null); setValidationStatus(prev => ({ ...prev, s2cd: null })); }} className={`bg-slate-900 p-5 rounded-2xl border font-mono text-2xl text-center text-sky-400 focus:border-sky-500 outline-none shadow-inner transition-colors ${validationStatus.s2cd === 'correct' ? 'border-emerald-500' : validationStatus.s2cd === 'incorrect' ? 'border-rose-500' : 'border-slate-700'}`} />
+                <input placeholder="" value={inputs.s2cd} onChange={e => { setInputs({ ...inputs, s2cd: e.target.value }); setFeedback(null); setValidationStatus(prev => ({ ...prev, s2cd: null })); }} className={`bg-slate-900 p-5 rounded-2xl border font-mono text-2xl text-center text-sky-400 focus:border-sky-500 outline-none shadow-inner transition-colors ${validationStatus.s2cd === 'correct' ? 'border-emerald-500' : validationStatus.s2cd === 'incorrect' ? 'border-rose-500' : 'border-slate-700'}`} />
               </div>
               <div className="flex flex-col gap-2">
                 <span className="text-[10px] uppercase font-bold text-slate-500 tracking-widest text-center">Variable</span>
-                <input placeholder="Var" value={inputs.s2v} onChange={e => { setInputs({ ...inputs, s2v: e.target.value }); setFeedback(null); setValidationStatus(prev => ({ ...prev, s2v: null })); }} className={`bg-slate-900 p-5 rounded-2xl border font-mono text-2xl text-center text-amber-400 focus:border-sky-500 outline-none shadow-inner transition-colors ${validationStatus.s2v === 'correct' ? 'border-emerald-500' : validationStatus.s2v === 'incorrect' ? 'border-rose-500' : 'border-slate-700'}`} />
+                <input placeholder="" value={inputs.s2v} onChange={e => { setInputs({ ...inputs, s2v: e.target.value }); setFeedback(null); setValidationStatus(prev => ({ ...prev, s2v: null })); }} className={`bg-slate-900 p-5 rounded-2xl border font-mono text-2xl text-center text-amber-400 focus:border-sky-500 outline-none shadow-inner transition-colors ${validationStatus.s2v === 'correct' ? 'border-emerald-500' : validationStatus.s2v === 'incorrect' ? 'border-rose-500' : 'border-slate-700'}`} />
               </div>
               <div className="flex flex-col gap-2">
                 <span className="text-[10px] uppercase font-bold text-slate-500 tracking-widest text-center">Constant</span>
-                <input placeholder="Con" value={inputs.s2con} onChange={e => { setInputs({ ...inputs, s2con: e.target.value }); setFeedback(null); setValidationStatus(prev => ({ ...prev, s2con: null })); }} className={`bg-slate-900 p-5 rounded-2xl border font-mono text-2xl text-center text-emerald-400 focus:border-sky-500 outline-none shadow-inner transition-colors ${validationStatus.s2con === 'correct' ? 'border-emerald-500' : validationStatus.s2con === 'incorrect' ? 'border-rose-500' : 'border-slate-700'}`} />
+                <input placeholder="" value={inputs.s2con} onChange={e => { setInputs({ ...inputs, s2con: e.target.value }); setFeedback(null); setValidationStatus(prev => ({ ...prev, s2con: null })); }} className={`bg-slate-900 p-5 rounded-2xl border font-mono text-2xl text-center text-emerald-400 focus:border-sky-500 outline-none shadow-inner transition-colors ${validationStatus.s2con === 'correct' ? 'border-emerald-500' : validationStatus.s2con === 'incorrect' ? 'border-rose-500' : 'border-slate-700'}`} />
               </div>
             </div>
             <div className="w-full flex flex-col gap-2">
@@ -279,14 +284,15 @@ const Loop4Level2Inner: React.FC<LevelComponentProps> = ({ onComplete, onExit, p
                 onClick={checkS2} 
                 className="w-full bg-sky-600 hover:bg-sky-500 py-4 rounded-xl font-black text-xl shadow-lg transition-all hover:scale-105 active:scale-95 uppercase tracking-wider"
             >
-                Verify Expression
+                Check
             </button>
           </div>
         )}
         {step === 3 && (
           <div className="animate-fade-in space-y-10 text-center flex flex-col items-center pt-8">
+            <h2 className="text-xl font-bold text-white mb-2 text-center">Find constant difference, variable, and constant. Then, write an algebraic expression.</h2>
             <div className="bg-slate-900 px-10 py-6 rounded-3xl border-2 border-indigo-500/50 text-6xl font-mono tracking-widest text-indigo-300 mb-4 shadow-[0_0_50px_rgba(99,102,241,0.1)]">-3, 2, 7, 12...</div>
-            <p className="text-slate-400 text-sm mb-6 max-w-lg italic font-bold">Use variable 'n' to represent the term number.</p>
+            <p className="text-white text-xl font-bold mb-6 max-w-lg leading-relaxed">Use variable 'n' to represent the term number.</p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
               <div className="flex flex-col gap-2">
                 <input placeholder="CD" value={inputs.s3cd} onChange={e => { setInputs({ ...inputs, s3cd: e.target.value }); setFeedback(null); setValidationStatus(prev => ({ ...prev, s3cd: null })); }} className={`bg-slate-900 p-5 rounded-2xl border font-mono text-2xl text-center text-sky-400 focus:border-sky-500 outline-none transition-colors ${validationStatus.s3cd === 'correct' ? 'border-emerald-500' : validationStatus.s3cd === 'incorrect' ? 'border-rose-500' : 'border-slate-700'}`} />
@@ -303,13 +309,12 @@ const Loop4Level2Inner: React.FC<LevelComponentProps> = ({ onComplete, onExit, p
                 onClick={checkS3} 
                 className="w-full bg-sky-600 hover:bg-sky-500 py-4 rounded-xl font-black text-xl shadow-lg transition-all hover:scale-105 active:scale-95 uppercase tracking-wider"
             >
-                Verify Expression
+                Check
             </button>
           </div>
         )}
         {step === 4 && (
           <div className="animate-fade-in space-y-10 flex flex-col items-center">
-            <h2 className="text-xl font-bold text-sky-300 italic uppercase">The Mystery Rectangle</h2>
             <div className="flex flex-col md:flex-row gap-10 items-center w-full justify-center">
                 <div className="bg-white p-12 rounded-3xl shadow-xl relative w-full max-w-sm flex items-center justify-center">
                     <div className="w-full h-24 bg-sky-200 border-4 border-sky-600 flex items-center justify-center rounded-xl relative shadow-inner">
@@ -333,7 +338,7 @@ const Loop4Level2Inner: React.FC<LevelComponentProps> = ({ onComplete, onExit, p
                 onClick={checkS4} 
                 className="w-full bg-sky-600 hover:bg-sky-500 py-4 rounded-xl font-black text-xl shadow-lg transition-all hover:scale-105 active:scale-95 uppercase tracking-wider"
             >
-                Complete Investigation
+                Check
             </button>
           </div>
         )}

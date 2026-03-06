@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import type { Level, PlayerProgress } from '../types';
 import { useToolbar } from '../hooks/useToolbarState';
 import Toolbar from './toolbar/Toolbar';
@@ -9,6 +9,7 @@ import Notes from './toolbar/Notes';
 import Calculator from './toolbar/Calculator';
 import DocumentsModal from './toolbar/DocumentsModal';
 import Highlighter from './toolbar/Highlighter';
+import CompletionModal from './CompletionModal';
 
 
 interface LevelViewProps {
@@ -20,10 +21,22 @@ interface LevelViewProps {
   onSavePartialProgress?: (state: any | null) => void;
   progress?: PlayerProgress;
   lessonTitle?: string | null;
+  isLastLevel?: boolean;
   onNext?: () => void;
 }
 
-const LevelView: React.FC<LevelViewProps> = ({ level, onBackToMap, onComplete, onExit, partialProgress, onSavePartialProgress, progress, lessonTitle, onNext }) => {
+const LevelView: React.FC<LevelViewProps> = ({ 
+  level, 
+  onBackToMap, 
+  onComplete, 
+  onExit, 
+  partialProgress, 
+  onSavePartialProgress, 
+  progress, 
+  lessonTitle,
+  isLastLevel = false,
+  onNext 
+}) => {
   const LevelComponent = level.component;
   const { 
     activeTool, 
@@ -33,6 +46,33 @@ const LevelView: React.FC<LevelViewProps> = ({ level, onBackToMap, onComplete, o
     showLineReader
   } = useToolbar();
   const contentWrapperRef = useRef<HTMLDivElement>(null);
+  
+  const [showCompletionModal, setShowCompletionModal] = useState(false);
+  const [earnedStars, setEarnedStars] = useState(0);
+  
+  const handleComplete = (stars: number) => {
+    setEarnedStars(stars);
+    setShowCompletionModal(true);
+    onComplete(stars);
+  };
+  
+  const handleReplay = () => {
+    setShowCompletionModal(false);
+    // Optionally, you could reload the level or reset its state here
+    window.location.reload(); // Simple approach - reload the page
+  };
+  
+  const handleNext = () => {
+    setShowCompletionModal(false);
+    if (onNext) {
+      onNext();
+    }
+  };
+  
+  const handleBackToMap = () => {
+    setShowCompletionModal(false);
+    onBackToMap();
+  };
 
   return (
     <div className={`fixed inset-0 bg-gray-900 bg-opacity-95 backdrop-blur-sm p-4 flex flex-col animate-fade-in ${isHighContrast ? 'high-contrast' : ''}`}>
@@ -64,7 +104,7 @@ const LevelView: React.FC<LevelViewProps> = ({ level, onBackToMap, onComplete, o
         >
           <LevelComponent
             topic={level.topic}
-            onComplete={onComplete}
+            onComplete={handleComplete}
             onExit={onExit}
             questions={level.questions}
             isGated={level.isGated}
@@ -84,6 +124,16 @@ const LevelView: React.FC<LevelViewProps> = ({ level, onBackToMap, onComplete, o
       {activeTool === 'notes' && <Notes />}
       {activeTool === 'calculator' && <Calculator />}
       {activeTool === 'documents' && <DocumentsModal />}
+      
+      {showCompletionModal && (
+        <CompletionModal
+          stars={earnedStars}
+          isLastLevel={isLastLevel}
+          onReplay={handleReplay}
+          onNext={handleNext}
+          onBackToMap={handleBackToMap}
+        />
+      )}
     </div>
   );
 };

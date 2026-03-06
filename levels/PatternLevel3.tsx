@@ -3,8 +3,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import type { LevelComponentProps } from '../types';
 import InstructionButton from '../components/InstructionButton';
 import InstructionModal from '../components/InstructionModal';
+import GlossaryButton from '../components/GlossaryButton';
+import GlossaryModal from '../components/GlossaryModal';
 
-type Stage = 1 | 2 | 3;
+type Question = 1 | 2 | 3 | 4;
 
 const StarIcon: React.FC<{ className?: string; filled: boolean }> = ({ className, filled }) => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill={filled ? "currentColor" : "none"} stroke="currentColor" strokeWidth={filled ? 0 : 1.5} className={className}>
@@ -13,31 +15,43 @@ const StarIcon: React.FC<{ className?: string; filled: boolean }> = ({ className
 );
 
 const PatternLevel3: React.FC<LevelComponentProps> = ({ onComplete, onExit, partialProgress, onSavePartialProgress }) => {
-  const [stage, setStage] = useState<Stage>(() => partialProgress?.stage || 1);
+  const [currentQ, setCurrentQ] = useState<Question>(() => partialProgress?.currentQ || 1);
   const [isInstructionOpen, setIsInstructionOpen] = useState(false);
+  const [isGlossaryOpen, setIsGlossaryOpen] = useState(false);
   const [feedback, setFeedback] = useState<{ type: 'correct' | 'incorrect'; message?: string } | null>(null);
   const [isAllComplete, setIsAllComplete] = useState(false);
 
-  const [selection, setSelection] = useState<string | null>(null);
+  // Q1: Multiple choice
+  const [q1Selection, setQ1Selection] = useState<string | null>(null);
+  
+  // Q2: Table completion
+  const [q2Input, setQ2Input] = useState('');
+  
+  // Q3: Number input
+  const [q3Input, setQ3Input] = useState('');
+  
+  // Q4: Multiple choice (table selection)
+  const [q4Selection, setQ4Selection] = useState<string | null>(null);
+
   const [validationStatus, setValidationStatus] = useState<Record<string, 'correct' | 'incorrect' | null>>({});
   const isCompletedRef = useRef(false);
 
   useEffect(() => {
     return () => {
       if (!isCompletedRef.current && onSavePartialProgress) {
-        onSavePartialProgress({ stage });
+        onSavePartialProgress({ currentQ });
       }
     };
-  }, [stage]);
+  }, [currentQ]);
 
-  const handleCorrect = (nextStage?: Stage) => {
+  const handleCorrect = (nextQ?: Question) => {
     setFeedback({ type: 'correct' });
     setTimeout(() => {
       setFeedback(null);
-      setSelection(null);
       setValidationStatus({});
-      if (nextStage) setStage(nextStage);
-      else {
+      if (nextQ) {
+        setCurrentQ(nextQ);
+      } else {
         setIsAllComplete(true);
         isCompletedRef.current = true;
         onComplete(3);
@@ -49,143 +63,370 @@ const PatternLevel3: React.FC<LevelComponentProps> = ({ onComplete, onExit, part
     setFeedback({ type: 'incorrect', message: msg });
   };
 
-  const validate = () => {
-    if (stage === 1) {
-      const isCorrect = selection === 'A';
-      setValidationStatus({ selection: isCorrect ? 'correct' : 'incorrect' });
-      if (isCorrect) handleCorrect(2);
-      else handleIncorrect("Linear patterns must form a perfectly straight line on a graph.");
-    } else if (stage === 2) {
-      const isCorrect = selection === 'B';
-      setValidationStatus({ selection: isCorrect ? 'correct' : 'incorrect' });
-      if (isCorrect) handleCorrect(3);
-      else handleIncorrect("Check the differences! A: 1, 2, 4, 8 (doubling). B: 3, 6, 9, 12 (+3 constant). Linear patterns add the SAME amount.");
-    } else if (stage === 3) {
-      const isCorrect = selection === 'Linear';
-      setValidationStatus({ selection: isCorrect ? 'correct' : 'incorrect' });
-      if (isCorrect) handleCorrect();
-      else handleIncorrect("Sequence: 10, 20, 30, 40. It adds 10 every time. That's a constant difference, so it's Linear!");
-    }
+  const validateQ1 = () => {
+    const isCorrect = q1Selection === '32';
+    setValidationStatus({ q1: isCorrect ? 'correct' : 'incorrect' });
+    if (isCorrect) handleCorrect(2);
+    else handleIncorrect("Try again! Look at the pattern carefully.");
+  };
+
+  const validateQ2 = () => {
+    const isCorrect = q2Input === '15';
+    setValidationStatus({ q2: isCorrect ? 'correct' : 'incorrect' });
+    if (isCorrect) handleCorrect(3);
+    else handleIncorrect("Try again! The value increases by the same amount each time.");
+  };
+
+  const validateQ3 = () => {
+    const isCorrect = q3Input === '15';
+    setValidationStatus({ q3: isCorrect ? 'correct' : 'incorrect' });
+    if (isCorrect) handleCorrect(4);
+    else handleIncorrect("Try again! Count the dots in each figure carefully.");
+  };
+
+  const validateQ4 = () => {
+    const isCorrect = q4Selection === 'C';
+    setValidationStatus({ q4: isCorrect ? 'correct' : 'incorrect' });
+    if (isCorrect) handleCorrect();
+    else handleIncorrect("Try again! Look for the table where the value increases by 3 each time.");
   };
 
   if (isAllComplete) {
     return (
         <div className="flex flex-col items-center justify-center min-h-full p-8 text-center animate-fade-in">
-            <h2 className="text-4xl font-bold text-emerald-400 mb-6 uppercase italic">Linearity Mastered!</h2>
+            <h2 className="text-4xl font-bold text-emerald-400 mb-6">Level Complete!</h2>
             <div className="flex justify-center gap-2 mb-8">
                 {[1, 2, 3].map(i => <StarIcon key={i} filled={true} className="w-16 h-16 text-yellow-400" />)}
             </div>
-            <p className="text-xl text-gray-300 mb-10 max-w-md">You can now distinguish between steady linear growth and changing non-linear growth.</p>
-            <button onClick={onExit} className="bg-emerald-600 hover:bg-emerald-500 px-12 py-4 rounded-2xl font-black text-xl shadow-lg transition-transform hover:scale-105 active:scale-95">Return to Map</button>
+            <p className="text-xl text-gray-300 mb-10">Excellent work on pattern recognition!</p>
+            <button onClick={onExit} className="bg-emerald-600 hover:bg-emerald-500 px-12 py-4 rounded-2xl font-black text-xl shadow-lg transition-transform hover:scale-105 active:scale-95">Back to Map</button>
         </div>
     );
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-full p-6 text-white bg-gray-900 font-sans max-w-6xl mx-auto relative select-none">
+    <div className="flex flex-col items-center justify-center min-h-full p-6 text-white bg-gray-900 font-sans max-w-4xl mx-auto relative">
+      <GlossaryButton onClick={() => setIsGlossaryOpen(true)} />
+      <GlossaryModal isOpen={isGlossaryOpen} onClose={() => setIsGlossaryOpen(false)} />
       <InstructionButton onClick={() => setIsInstructionOpen(true)} />
-      <InstructionModal isOpen={isInstructionOpen} onClose={() => setIsInstructionOpen(false)} title="Mastering Linearity">
-        <p className="mb-4"><strong>Linear Patterns</strong> follow a straight line because the <strong>change is always the same</strong> (Constant Difference).</p>
-        <p>If the growth changes—like doubling or squaring—the pattern is <strong>Non-Linear</strong> and will curve on a graph.</p>
+      <InstructionModal isOpen={isInstructionOpen} onClose={() => setIsInstructionOpen(false)} title="Pattern Practice">
+        <p>Test your understanding of patterns by answering these questions about sequences, tables, and figures.</p>
       </InstructionModal>
 
-      <h1 className="text-3xl font-bold mb-4 text-sky-300 uppercase italic">Linearity Detective</h1>
-
       <div className="flex gap-4 mb-8">
-        {[1, 2, 3].map(i => (
-          <button 
+        {[1, 2, 3, 4].map(i => (
+          <div 
             key={i} 
-            onClick={() => { setStage(i as Stage); setSelection(null); setFeedback(null); }}
-            className={`h-4 w-4 rounded-full transition-all duration-500 cursor-pointer focus:outline-none focus:ring-2 focus:ring-sky-400 focus:ring-offset-2 focus:ring-offset-gray-900 ${stage >= i ? 'bg-sky-500 shadow-[0_0_10px_rgba(14,165,233,0.7)]' : 'bg-gray-700'}`} 
-            aria-label={`Go to task ${i}`}
+            className={`h-4 w-4 rounded-full transition-all duration-500 ${currentQ >= i ? 'bg-sky-500 shadow-[0_0_10px_rgba(14,165,233,0.7)]' : 'bg-gray-700'}`} 
+            aria-label={`Question ${i}`}
           />
         ))}
       </div>
 
-      {feedback && (
-        <div className={`fixed top-24 px-8 py-4 rounded-2xl font-bold shadow-2xl z-[200] animate-fade-in ${
-          feedback.type === 'correct' ? 'bg-emerald-500' : 'bg-rose-600 border-2 border-rose-400'
-        }`}>
-          {feedback.message || (feedback.type === 'correct' ? '✨ Perfect!' : 'Try again!')}
-        </div>
-      )}
+      <div className="w-full bg-gray-800 rounded-3xl p-10 shadow-2xl border border-gray-700">
+        {currentQ === 1 && (
+          <div className="animate-fade-in">
+            <h2 className="text-2xl font-bold mb-8 text-white">1) The first four terms of a pattern are 2, 4, 8, 16. Which term is next?</h2>
+            <div className="grid grid-cols-4 gap-4 mb-6">
+              {['18', '20', '24', '32'].map((option) => (
+                <button
+                  key={option}
+                  onClick={() => { setQ1Selection(option); setFeedback(null); setValidationStatus({}); }}
+                  className={`p-4 rounded-xl border-2 font-bold text-lg transition-all ${
+                    q1Selection === option
+                      ? validationStatus.q1 === 'correct'
+                        ? 'bg-emerald-600 border-emerald-500 text-white'
+                        : validationStatus.q1 === 'incorrect'
+                        ? 'bg-rose-600 border-rose-500 text-white'
+                        : 'bg-sky-600 border-sky-500 text-white'
+                      : 'bg-gray-700 border-gray-600 text-gray-300 hover:border-gray-500'
+                  }`}
+                >
+                  {option}
+                </button>
+              ))}
+            </div>
+            {feedback && (
+              <div className={`mb-4 p-3 rounded-lg font-semibold ${
+                feedback.type === 'correct' ? 'text-emerald-400' : 'text-yellow-400'
+              }`}>
+                {feedback.message}
+              </div>
+            )}
+            <button 
+              onClick={validateQ1} 
+              disabled={!q1Selection}
+              className="w-full bg-sky-600 hover:bg-sky-500 disabled:bg-gray-600 text-white font-black py-4 rounded-xl transition-all"
+            >
+              Check
+            </button>
+          </div>
+        )}
 
-      <div className="w-full max-w-4xl bg-gray-800 rounded-3xl p-10 shadow-2xl border border-gray-700 flex flex-col items-center">
-        {stage === 1 && (
-          <div className="animate-fade-in w-full flex flex-col items-center">
-            <h2 className="text-xl font-bold mb-8 text-indigo-200 text-center">Which graph represents a <span className="text-sky-300 underline underline-offset-8">Linear Pattern</span>?</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full mb-10">
-              <button onClick={() => { setSelection('A'); setFeedback(null); setValidationStatus({}); }} className={`group bg-white p-6 rounded-3xl border-4 transition-all ${selection === 'A' ? (validationStatus.selection === 'correct' ? 'border-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.4)]' : validationStatus.selection === 'incorrect' ? 'border-rose-500 shadow-[0_0_20px_rgba(244,63,94,0.4)]' : 'border-sky-500 shadow-2xl') : 'border-transparent hover:border-slate-300'} ${selection === 'A' ? 'scale-105' : ''}`}>
-                <span className={`font-bold block mb-4 ${selection === 'A' && validationStatus.selection === 'incorrect' ? 'text-rose-600' : 'text-slate-900'}`}>Graph A</span>
-                <svg viewBox="0 0 100 100" className="w-full h-auto">
-                    <line x1="10" y1="90" x2="90" y2="90" stroke="#cbd5e1" strokeWidth="2" />
-                    <line x1="10" y1="90" x2="10" y2="10" stroke="#cbd5e1" strokeWidth="2" />
-                    <line x1="10" y1="90" x2="90" y2="10" stroke="#3b82f6" strokeWidth="4" strokeLinecap="round" />
-                    <circle cx="30" cy="70" r="3" fill="#1d4ed8" /><circle cx="50" cy="50" r="3" fill="#1d4ed8" /><circle cx="70" cy="30" r="3" fill="#1d4ed8" />
-                </svg>
+        {currentQ === 2 && (
+          <div className="animate-fade-in">
+            <h2 className="text-2xl font-bold mb-8 text-white">2) Complete the table.</h2>
+            <table className="w-full max-w-sm mx-auto mb-6 border-collapse border-2 border-gray-600">
+              <thead>
+                <tr className="bg-gray-700">
+                  <th className="border-2 border-gray-600 p-3 text-gray-200">Term</th>
+                  <th className="border-2 border-gray-600 p-3 text-gray-200">Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td className="border-2 border-gray-600 p-3 text-center text-gray-200">1</td>
+                  <td className="border-2 border-gray-600 p-3 text-center text-gray-200">5</td>
+                </tr>
+                <tr>
+                  <td className="border-2 border-gray-600 p-3 text-center text-gray-200">2</td>
+                  <td className="border-2 border-gray-600 p-3 text-center text-gray-200">10</td>
+                </tr>
+                <tr>
+                  <td className="border-2 border-gray-600 p-3 text-center text-gray-200">3</td>
+                  <td className="border-2 border-gray-600 p-3 text-center">
+                    <input
+                      type="number"
+                      value={q2Input}
+                      onChange={(e) => { setQ2Input(e.target.value); setFeedback(null); setValidationStatus({}); }}
+                      className={`w-full px-3 py-2 text-center border-2 rounded bg-gray-900 text-white ${
+                        validationStatus.q2 === 'correct'
+                          ? 'border-emerald-500'
+                          : validationStatus.q2 === 'incorrect'
+                          ? 'border-rose-500'
+                          : 'border-gray-600'
+                      }`}
+                      placeholder="?"
+                    />
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <p className="text-gray-400 mb-6 text-center">The value increases by the same amount each time.</p>
+            {feedback && (
+              <div className={`mb-4 p-3 rounded-lg font-semibold ${
+                feedback.type === 'correct' ? 'text-emerald-400' : 'text-yellow-400'
+              }`}>
+                {feedback.message}
+              </div>
+            )}
+            <button 
+              onClick={validateQ2}
+              disabled={!q2Input}
+              className="w-full bg-sky-600 hover:bg-sky-500 disabled:bg-gray-600 text-white font-black py-4 rounded-xl transition-all"
+            >
+              Check
+            </button>
+          </div>
+        )}
+
+        {currentQ === 3 && (
+          <div className="animate-fade-in">
+            <h2 className="text-2xl font-bold mb-8 text-white">3) The figures below grow by adding one more row of dots each time.</h2>
+            <div className="flex justify-center items-end gap-8 mb-8 p-6 bg-gray-900/50 rounded-xl border border-gray-700">
+              {/* Figure 1: 1 dot */}
+              <div className="flex flex-col items-center gap-2">
+                <div className="flex flex-col gap-1">
+                  <div className="flex gap-1">
+                    <div className="w-4 h-4 bg-sky-500 rounded-full"></div>
+                  </div>
+                </div>
+              </div>
+              {/* Figure 2: 3 dots (1+2) */}
+              <div className="flex flex-col items-center gap-2">
+                <div className="flex flex-col gap-1">
+                  <div className="flex gap-1">
+                    <div className="w-4 h-4 bg-sky-500 rounded-full"></div>
+                  </div>
+                  <div className="flex gap-1">
+                    <div className="w-4 h-4 bg-sky-500 rounded-full"></div>
+                    <div className="w-4 h-4 bg-sky-500 rounded-full"></div>
+                  </div>
+                </div>
+              </div>
+              {/* Figure 3: 6 dots (1+2+3) */}
+              <div className="flex flex-col items-center gap-2">
+                <div className="flex flex-col gap-1">
+                  <div className="flex gap-1">
+                    <div className="w-4 h-4 bg-sky-500 rounded-full"></div>
+                  </div>
+                  <div className="flex gap-1">
+                    <div className="w-4 h-4 bg-sky-500 rounded-full"></div>
+                    <div className="w-4 h-4 bg-sky-500 rounded-full"></div>
+                  </div>
+                  <div className="flex gap-1">
+                    <div className="w-4 h-4 bg-sky-500 rounded-full"></div>
+                    <div className="w-4 h-4 bg-sky-500 rounded-full"></div>
+                    <div className="w-4 h-4 bg-sky-500 rounded-full"></div>
+                  </div>
+                </div>
+              </div>
+              {/* Figure 4: 10 dots (1+2+3+4) */}
+              <div className="flex flex-col items-center gap-2">
+                <div className="flex flex-col gap-1">
+                  <div className="flex gap-1">
+                    <div className="w-4 h-4 bg-sky-500 rounded-full"></div>
+                  </div>
+                  <div className="flex gap-1">
+                    <div className="w-4 h-4 bg-sky-500 rounded-full"></div>
+                    <div className="w-4 h-4 bg-sky-500 rounded-full"></div>
+                  </div>
+                  <div className="flex gap-1">
+                    <div className="w-4 h-4 bg-sky-500 rounded-full"></div>
+                    <div className="w-4 h-4 bg-sky-500 rounded-full"></div>
+                    <div className="w-4 h-4 bg-sky-500 rounded-full"></div>
+                  </div>
+                  <div className="flex gap-1">
+                    <div className="w-4 h-4 bg-sky-500 rounded-full"></div>
+                    <div className="w-4 h-4 bg-sky-500 rounded-full"></div>
+                    <div className="w-4 h-4 bg-sky-500 rounded-full"></div>
+                    <div className="w-4 h-4 bg-sky-500 rounded-full"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="mb-6">
+              <label className="block text-gray-300 font-bold mb-3">How many dots are in figure 5?</label>
+              <input
+                type="number"
+                value={q3Input}
+                onChange={(e) => { setQ3Input(e.target.value); setFeedback(null); setValidationStatus({}); }}
+                className={`w-32 px-4 py-3 text-xl text-center border-2 rounded-xl bg-gray-900 text-white ${
+                  validationStatus.q3 === 'correct'
+                    ? 'border-emerald-500'
+                    : validationStatus.q3 === 'incorrect'
+                    ? 'border-rose-500'
+                    : 'border-gray-600'
+                }`}
+                placeholder="0"
+              />
+            </div>
+            {feedback && (
+              <div className={`mb-4 p-3 rounded-lg font-semibold ${
+                feedback.type === 'correct' ? 'text-emerald-400' : 'text-yellow-400'
+              }`}>
+                {feedback.message}
+              </div>
+            )}
+            <button 
+              onClick={validateQ3}
+              disabled={!q3Input}
+              className="w-full bg-sky-600 hover:bg-sky-500 disabled:bg-gray-600 text-white font-black py-4 rounded-xl transition-all"
+            >
+              Check
+            </button>
+          </div>
+        )}
+
+        {currentQ === 4 && (
+          <div className="animate-fade-in">
+            <h2 className="text-2xl font-bold mb-8 text-white">4) Which table best matches this description? "The value increases by 3 each time."</h2>
+            <div className="grid grid-cols-3 gap-6 mb-6">
+              {/* Table A */}
+              <button
+                onClick={() => { setQ4Selection('A'); setFeedback(null); setValidationStatus({}); }}
+                className={`p-4 rounded-xl border-2 transition-all ${
+                  q4Selection === 'A'
+                    ? validationStatus.q4 === 'correct'
+                      ? 'bg-emerald-600 border-emerald-500'
+                      : validationStatus.q4 === 'incorrect'
+                      ? 'bg-rose-600 border-rose-500'
+                      : 'bg-sky-600 border-sky-500'
+                    : 'bg-gray-700 border-gray-600 hover:border-gray-500'
+                }`}
+              >
+                <div className="font-bold mb-3 text-white">A)</div>
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-600">
+                      <th className="p-1 text-gray-300">Term</th>
+                      <th className="p-1 text-gray-300">Value</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr><td className="p-1 text-center text-white">1</td><td className="p-1 text-center text-white">2</td></tr>
+                    <tr><td className="p-1 text-center text-white">2</td><td className="p-1 text-center text-white">4</td></tr>
+                    <tr><td className="p-1 text-center text-white">3</td><td className="p-1 text-center text-white">8</td></tr>
+                  </tbody>
+                </table>
               </button>
-              <button onClick={() => { setSelection('B'); setFeedback(null); setValidationStatus({}); }} className={`group bg-white p-6 rounded-3xl border-4 transition-all ${selection === 'B' ? (validationStatus.selection === 'correct' ? 'border-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.4)]' : validationStatus.selection === 'incorrect' ? 'border-rose-500 shadow-[0_0_20px_rgba(244,63,94,0.4)]' : 'border-sky-500 shadow-2xl') : 'border-transparent hover:border-slate-300'} ${selection === 'B' ? 'scale-105' : ''}`}>
-                <span className={`font-bold block mb-4 ${selection === 'B' && validationStatus.selection === 'incorrect' ? 'text-rose-600' : 'text-slate-900'}`}>Graph B</span>
-                <svg viewBox="0 0 100 100" className="w-full h-auto">
-                    <line x1="10" y1="90" x2="90" y2="90" stroke="#cbd5e1" strokeWidth="2" />
-                    <line x1="10" y1="90" x2="10" y2="10" stroke="#cbd5e1" strokeWidth="2" />
-                    <path d="M 10 90 Q 50 85, 90 10" fill="none" stroke="#f43f5e" strokeWidth="4" strokeLinecap="round" />
-                    <circle cx="20" cy="88" r="3" fill="#be123c" /><circle cx="45" cy="80" r="3" fill="#be123c" /><circle cx="75" cy="40" r="3" fill="#be123c" />
-                </svg>
+              {/* Table B */}
+              <button
+                onClick={() => { setQ4Selection('B'); setFeedback(null); setValidationStatus({}); }}
+                className={`p-4 rounded-xl border-2 transition-all ${
+                  q4Selection === 'B'
+                    ? validationStatus.q4 === 'correct'
+                      ? 'bg-emerald-600 border-emerald-500'
+                      : validationStatus.q4 === 'incorrect'
+                      ? 'bg-rose-600 border-rose-500'
+                      : 'bg-sky-600 border-sky-500'
+                    : 'bg-gray-700 border-gray-600 hover:border-gray-500'
+                }`}
+              >
+                <div className="font-bold mb-3 text-white">B)</div>
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-600">
+                      <th className="p-1 text-gray-300">Term</th>
+                      <th className="p-1 text-gray-300">Value</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr><td className="p-1 text-center text-white">1</td><td className="p-1 text-center text-white">5</td></tr>
+                    <tr><td className="p-1 text-center text-white">2</td><td className="p-1 text-center text-white">8</td></tr>
+                    <tr><td className="p-1 text-center text-white">3</td><td className="p-1 text-center text-white">11</td></tr>
+                  </tbody>
+                </table>
+              </button>
+              {/* Table C */}
+              <button
+                onClick={() => { setQ4Selection('C'); setFeedback(null); setValidationStatus({}); }}
+                className={`p-4 rounded-xl border-2 transition-all ${
+                  q4Selection === 'C'
+                    ? validationStatus.q4 === 'correct'
+                      ? 'bg-emerald-600 border-emerald-500'
+                      : validationStatus.q4 === 'incorrect'
+                      ? 'bg-rose-600 border-rose-500'
+                      : 'bg-sky-600 border-sky-500'
+                    : 'bg-gray-700 border-gray-600 hover:border-gray-500'
+                }`}
+              >
+                <div className="font-bold mb-3 text-white">C)</div>
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-600">
+                      <th className="p-1 text-gray-300">Term</th>
+                      <th className="p-1 text-gray-300">Value</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr><td className="p-1 text-center text-white">1</td><td className="p-1 text-center text-white">3</td></tr>
+                    <tr><td className="p-1 text-center text-white">2</td><td className="p-1 text-center text-white">9</td></tr>
+                    <tr><td className="p-1 text-center text-white">3</td><td className="p-1 text-center text-white">27</td></tr>
+                  </tbody>
+                </table>
               </button>
             </div>
+            {feedback && (
+              <div className={`mb-4 p-3 rounded-lg font-semibold ${
+                feedback.type === 'correct' ? 'text-emerald-400' : 'text-yellow-400'
+              }`}>
+                {feedback.message}
+              </div>
+            )}
+            <button 
+              onClick={validateQ4}
+              disabled={!q4Selection}
+              className="w-full bg-sky-600 hover:bg-sky-500 disabled:bg-gray-600 text-white font-black py-4 rounded-xl transition-all"
+            >
+              Check
+            </button>
           </div>
         )}
-
-        {stage === 2 && (
-          <div className="animate-fade-in w-full flex flex-col items-center">
-            <h2 className="text-xl font-bold mb-8 text-indigo-200 text-center">Which table has a <span className="text-emerald-400 italic">Constant Difference</span>?</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full mb-10">
-               <button onClick={() => { setSelection('A'); setFeedback(null); setValidationStatus({}); }} className={`p-8 rounded-3xl border-2 transition-all bg-gray-900/50 ${selection === 'A' ? (validationStatus.selection === 'correct' ? 'border-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.4)]' : validationStatus.selection === 'incorrect' ? 'border-rose-500 shadow-[0_0_20px_rgba(244,63,94,0.4)]' : 'border-sky-500 bg-gray-900 shadow-2xl') : 'border-gray-700 hover:border-gray-600'} ${selection === 'A' ? 'scale-105' : ''}`}>
-                  <span className={`font-bold block mb-6 text-lg uppercase tracking-widest ${selection === 'A' && validationStatus.selection === 'incorrect' ? 'text-rose-400' : 'text-indigo-300'}`}>Table A</span>
-                  <table className="w-full text-center border-collapse">
-                    <thead className="text-[10px] uppercase text-slate-500"><tr><th className="p-2 border-b border-gray-700">n</th><th className="p-2 border-b border-gray-700">Value</th></tr></thead>
-                    <tbody className="text-2xl font-mono">
-                        <tr><td className="p-2 border-r border-gray-800">1</td><td className="p-2 text-sky-400">1</td></tr>
-                        <tr><td className="p-2 border-r border-gray-800">2</td><td className="p-2 text-sky-400">2</td></tr>
-                        <tr><td className="p-2 border-r border-gray-800">3</td><td className="p-2 text-sky-400">4</td></tr>
-                        <tr><td className="p-2 border-r border-gray-800">4</td><td className="p-2 text-sky-400">8</td></tr>
-                    </tbody>
-                  </table>
-               </button>
-               <button onClick={() => { setSelection('B'); setFeedback(null); setValidationStatus({}); }} className={`p-8 rounded-3xl border-2 transition-all bg-gray-900/50 ${selection === 'B' ? (validationStatus.selection === 'correct' ? 'border-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.4)]' : validationStatus.selection === 'incorrect' ? 'border-rose-500 shadow-[0_0_20px_rgba(244,63,94,0.4)]' : 'border-sky-500 bg-gray-900 shadow-2xl') : 'border-gray-700 hover:border-gray-600'} ${selection === 'B' ? 'scale-105' : ''}`}>
-                  <span className={`font-bold block mb-6 text-lg uppercase tracking-widest ${selection === 'B' && validationStatus.selection === 'incorrect' ? 'text-rose-400' : 'text-emerald-400'}`}>Table B</span>
-                  <table className="w-full text-center border-collapse">
-                    <thead className="text-[10px] uppercase text-slate-500"><tr><th className="p-2 border-b border-gray-700">n</th><th className="p-2 border-b border-gray-700">Value</th></tr></thead>
-                    <tbody className="text-2xl font-mono">
-                        <tr><td className="p-2 border-r border-gray-800">1</td><td className="p-2 text-emerald-400">3</td></tr>
-                        <tr><td className="p-2 border-r border-gray-800">2</td><td className="p-2 text-emerald-400">6</td></tr>
-                        <tr><td className="p-2 border-r border-gray-800">3</td><td className="p-2 text-emerald-400">9</td></tr>
-                        <tr><td className="p-2 border-r border-gray-800">4</td><td className="p-2 text-emerald-400">12</td></tr>
-                    </tbody>
-                  </table>
-               </button>
-            </div>
-          </div>
-        )}
-
-        {stage === 3 && (
-          <div className="animate-fade-in w-full flex flex-col items-center text-center">
-             <h2 className="text-xl font-bold mb-8 text-indigo-200">Classify this sequence:</h2>
-             <div className="bg-gray-900 px-10 py-8 rounded-3xl border-2 border-gray-700 text-5xl font-mono tracking-[0.2em] text-indigo-300 mb-10 shadow-inner">10, 20, 30, 40...</div>
-             <div className="grid grid-cols-2 gap-4 w-full max-w-xl mb-10">
-                <button onClick={() => { setSelection('Linear'); setFeedback(null); setValidationStatus({}); }} className={`py-5 rounded-2xl border-2 font-bold text-xl uppercase transition-all ${selection === 'Linear' ? (validationStatus.selection === 'correct' ? 'bg-emerald-600 border-emerald-400 shadow-lg' : validationStatus.selection === 'incorrect' ? 'bg-rose-600 border-rose-400 shadow-lg' : 'bg-sky-600 border-sky-400 scale-105 shadow-lg') : 'bg-gray-700 border-gray-600 hover:border-gray-500'}`}>Linear</button>
-                <button onClick={() => { setSelection('Non-Linear'); setFeedback(null); setValidationStatus({}); }} className={`py-5 rounded-2xl border-2 font-bold text-xl uppercase transition-all ${selection === 'Non-Linear' ? (validationStatus.selection === 'correct' ? 'bg-emerald-600 border-emerald-400 shadow-lg' : validationStatus.selection === 'incorrect' ? 'bg-rose-600 border-rose-400 shadow-lg' : 'bg-rose-600 border-rose-400 scale-105 shadow-lg') : 'bg-gray-700 border-gray-600 hover:border-gray-500'}`}>Non-Linear</button>
-             </div>
-          </div>
-        )}
-
-        <button onClick={validate} disabled={!selection} className="w-full bg-sky-600 hover:bg-sky-500 disabled:bg-gray-700 py-4 rounded-xl font-black transition-all shadow-lg hover:scale-105 active:scale-95 uppercase tracking-wider flex items-center justify-center gap-4">
-          Verify Selection ➡️
-        </button>
       </div>
     </div>
   );
 };
 
 export default PatternLevel3;
+

@@ -156,13 +156,6 @@ const LevelNode: React.FC<{ level: Level; status: LevelStatus; stars: number; on
             <div className="flex gap-0.5 mt-1">
                 {[1, 2, 3].map(i => <StarIcon key={i} filled={i <= stars} className="w-3.5 h-3.5" />)}
             </div>
-
-            <button 
-                onClick={(e) => { e.stopPropagation(); onCompleteLevel(level.id, stars > 0 ? 0 : 3); }}
-                className="mt-3 text-[9px] font-black uppercase text-slate-500 hover:text-white transition-colors tracking-widest"
-            >
-                {stars > 0 ? 'LOCKED' : 'UNLOCK'}
-            </button>
         </div>
     );
 };
@@ -223,11 +216,6 @@ const LevelMap: React.FC<{ lessons: Lesson[], progress: PlayerProgress; onSelect
                     </div>
                 </div>
             </div>
-            
-            {/* Legend or spacing at the bottom */}
-            <div className="flex-shrink-0 h-24 flex items-center justify-center">
-                <span className="text-slate-500 font-bold uppercase tracking-[0.4em] text-xs animate-pulse">Use the scroll bar to navigate</span>
-            </div>
         </div>
     );
 };
@@ -276,6 +264,28 @@ function App() {
 
     const allLevels = useMemo(() => LESSON_DEFINITIONS.flatMap(lesson => lesson.levels), []);
     const currentLevel = allLevels.find(l => l.id === currentLevelId);
+    
+    // Find current lesson and determine if current level is last in lesson
+    const currentLesson = useMemo(() => 
+        LESSON_DEFINITIONS.find(lesson => lesson.levels.some(l => l.id === currentLevelId)),
+        [currentLevelId]
+    );
+    
+    const isLastLevel = useMemo(() => {
+        if (!currentLesson || !currentLevel) return false;
+        const lastLevelInLesson = currentLesson.levels[currentLesson.levels.length - 1];
+        return lastLevelInLesson.id === currentLevel.id;
+    }, [currentLesson, currentLevel]);
+    
+    // Find next level in the same lesson
+    const nextLevelId = useMemo(() => {
+        if (!currentLesson || !currentLevel || isLastLevel) return null;
+        const currentIndex = currentLesson.levels.findIndex(l => l.id === currentLevel.id);
+        if (currentIndex >= 0 && currentIndex < currentLesson.levels.length - 1) {
+            return currentLesson.levels[currentIndex + 1].id;
+        }
+        return null;
+    }, [currentLesson, currentLevel, isLastLevel]);
 
     return (
         <ToolbarProvider>
@@ -289,7 +299,9 @@ function App() {
                         partialProgress={partialProgress[currentLevel.id]}
                         onSavePartialProgress={(state) => savePartialProgress(currentLevel.id, state)}
                         progress={progress}
-                        lessonTitle={LESSON_DEFINITIONS.find(lesson => lesson.levels.some(l => l.id === currentLevel.id))?.title}
+                        lessonTitle={currentLesson?.title}
+                        isLastLevel={isLastLevel}
+                        onNext={() => nextLevelId && setCurrentLevelId(nextLevelId)}
                     />
                 ) : (
                     <LevelMap 
